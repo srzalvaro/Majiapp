@@ -3,7 +3,7 @@
 Next.js (App Router) + Tailwind + Supabase, pensado para móvil.
 
 ## Puesta en marcha
-1. Crea un proyecto en Supabase y ejecuta `supabase/schema.sql` en el SQL Editor.
+1. Crea un proyecto en Supabase, ejecuta `supabase/schema.sql`, crea 3 usuarios en Authentication y ejecuta `supabase/usuarios.sql` (asigna el rol a cada uno).
 2. `cp .env.example .env.local` y rellena URL y anon key.
 3. `npm install && npm run dev`
 4. En Vercel, define las mismas dos variables de entorno.

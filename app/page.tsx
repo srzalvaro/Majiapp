@@ -1,21 +1,19 @@
-import Link from "next/link";
-import { ROLES } from "@/lib/roles";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { rolDeSesion } from "@/lib/auth";
+import { getSupabase } from "@/lib/supabase";
 
 export default function Inicio() {
-  return (
-    <main className="flex min-h-dvh flex-col justify-center gap-4 p-4">
-      <h1 className="text-2xl font-bold">Calendario &amp; Logística Familiar</h1>
-      <p className="text-stone-600">¿Quién eres?</p>
-      {Object.values(ROLES).map((r) => (
-        <Link
-          key={r.slug}
-          href={`/${r.slug}`}
-          className="flex items-center gap-4 rounded-2xl bg-white p-5 text-xl font-semibold shadow-sm ring-1 ring-stone-200 active:scale-[0.98]"
-        >
-          <span className="text-4xl">{r.emoji}</span>
-          {r.titulo}
-        </Link>
-      ))}
-    </main>
-  );
+  const router = useRouter();
+  useEffect(() => {
+    const sb = getSupabase();
+    if (!sb) return router.replace("/login");
+    sb.auth.getSession().then(({ data }) => {
+      const rol = rolDeSesion(data.session);
+      router.replace(rol ? `/${rol}` : "/login");
+    });
+  }, [router]);
+  return <p className="p-6 text-stone-500">Cargando…</p>;
 }

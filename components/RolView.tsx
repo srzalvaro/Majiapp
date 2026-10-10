@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CarritoBadges from "./CarritoBadges";
 import DiaSelector from "./DiaSelector";
@@ -15,12 +16,15 @@ import {
   moverCarrito,
   resolverDia,
 } from "@/lib/queries";
+import { rolDeSesion } from "@/lib/auth";
 import type { RolConfig } from "@/lib/roles";
 import { getSupabase } from "@/lib/supabase";
 import type { Carrito, Excepcion, TareaRutina, Ubicacion } from "@/lib/types";
 
 export default function RolView({ rol }: { rol: RolConfig }) {
   const sb = getSupabase();
+  const router = useRouter();
+  const [autenticado, setAutenticado] = useState(false);
   const hoy = useMemo(hoyFn, []);
   const [fecha, setFecha] = useState(hoy);
   const [rutina, setRutina] = useState<TareaRutina[]>([]);
@@ -42,9 +46,24 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     if (sb) setExcepciones(await cargarExcepciones(sb, desde, hasta));
   }, [sb, desde, hasta]);
 
-  // Rutina + carritos: una vez
+  // Sesión: sin login -> /login; un rol que no es "padres" solo ve su vista
   useEffect(() => {
     if (!sb) return;
+    sb.auth.getSession().then(({ data }) => {
+      const mio = rolDeSesion(data.session);
+      if (!mio) return router.replace("/login");
+      if (mio !== "padres" && mio !== rol.slug) return router.replace(`/${mio}`);
+      setAutenticado(true);
+    });
+    const { data: sub } = sb.auth.onAuthStateChange((_e, s) => {
+      if (!s) router.replace("/login");
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [sb, rol.slug, router]);
+
+  // Rutina + carritos: una vez
+  useEffect(() => {
+    if (!sb || !autenticado) return;
     Promise.all([cargarRutina(sb), cargarCarritos(sb)])
       .then(([r, c]) => {
         setRutina(r);
@@ -52,16 +71,17 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       })
       .catch((e) => setError(e.message))
       .finally(() => setCargando(false));
-  }, [sb]);
+  }, [sb, autenticado]);
 
   // Excepciones: al cambiar de semana
   useEffect(() => {
+    if (!autenticado) return;
     recargarExcepciones().catch((e) => setError(e.message));
-  }, [recargarExcepciones]);
+  }, [autenticado, recargarExcepciones]);
 
   // Tiempo real
   useEffect(() => {
-    if (!sb) return;
+    if (!sb || !autenticado) return;
     const canal = sb
       .channel(`familia-${rol.slug}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "carritos" }, () =>
@@ -77,7 +97,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     return () => {
       sb.removeChannel(canal);
     };
-  }, [sb, rol.slug, recargarCarritos, recargarExcepciones]);
+  }, [sb, autenticado, rol.slug, recargarCarritos, recargarExcepciones]);
 
   const tareasDia = useMemo(() => resolverDia(fecha, rutina, excepciones), [fecha, rutina, excepciones]);
   const visibles = useMemo(
@@ -102,6 +122,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   }
 
   if (!sb) return <SetupAviso />;
+  if (!autenticado) return <p className="p-6 text-stone-500">Cargando…</p>;
 
   return (
     <div className="pb-28">
@@ -110,11 +131,19 @@ export default function RolView({ rol }: { rol: RolConfig }) {
           <h1 className={`font-bold ${rol.grande ? "text-2xl" : "text-xl"}`}>
             {rol.emoji} Hola, {rol.saludo}
           </h1>
-          {fecha !== hoy && (
-            <button onClick={() => setFecha(hoy)} className="rounded-full bg-stone-900 px-3 py-1 text-sm text-white">
-              Hoy
+          <div className="flex items-center gap-2">
+            {fecha !== hoy && (
+              <button onClick={() => setFecha(hoy)} className="rounded-full bg-stone-900 px-3 py-1 text-sm text-white">
+                Hoy
+              </button>
+            )}
+            <button
+              onClick={() => sb.auth.signOut()}
+              className="rounded-full px-3 py-1 text-sm text-stone-500 ring-1 ring-stone-300"
+            >
+              Salir
             </button>
-          )}
+          </div>
         </div>
         <DiaSelector
           fecha={fecha}

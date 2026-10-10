@@ -35,7 +35,7 @@ begin
 end $$;
 
 create or replace function public.carritos_log_move() returns trigger
-language plpgsql as $$
+language plpgsql security definer set search_path = public as $$
 begin
   if new.ubicacion_actual is distinct from old.ubicacion_actual then
     insert into public.carritos_historial (carrito_id, ubicacion, movido_por)
@@ -78,6 +78,8 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (1, '08:30', 'Álvaro teletrabaja (hasta 17:30)', 'Gym 13:00–14:00.', 'horario', null, '{alvaro}', null),
   (1, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Beige. Comida en el cole.', 'recogida', 'jimena', '{lucia}', 'beige'),
   (1, '16:00', 'Recoger a Mateo en la guardería', null, 'recogida', 'mateo', '{gloria}', null),
+  (1, '17:00', 'Llevar el Carro Beige a Casa Familia', 'Los carros acaban el lunes en casa.', 'carrito', null, '{lucia}', 'beige'),
+  (1, '17:00', 'Llevar el Carro Verde de casa de los abuelos a Casa Familia', 'Los carros acaban el lunes en casa.', 'carrito', null, '{gloria}', 'verde'),
   -- MARTES
   (2, '09:00', 'Gloria trabaja (09:00–13:30)', null, 'horario', null, '{gloria}', null),
   (2, '09:00', 'Álvaro teletrabaja (hasta 17:30)', null, 'horario', null, '{alvaro}', null),
@@ -94,11 +96,14 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (4, '09:00', 'Álvaro teletrabaja (para a las 16:45)', 'Gym 13:00–14:00.', 'horario', null, '{alvaro}', null),
   (4, '16:00', 'Recoger a Jimena en el cole', 'Tarde con los padres.', 'recogida', 'jimena', '{gloria}', null),
   (4, '16:00', 'Recoger a Mateo en la guardería', 'Tarde con los padres.', 'recogida', 'mateo', '{goyo}', null),
+  (4, '17:00', 'Llevar a Jimena y Mateo a inglés', 'Se queda con ellos durante la clase.', 'otro', null, '{alvaro}', null),
+  (4, '17:00', 'Gimnasio (17:00–18:00)', null, 'horario', null, '{gloria}', null),
+  (4, '17:00', 'Libre desde las 17:00', null, 'horario', null, '{goyo}', null),
   -- VIERNES
   (5, '09:00', 'Gloria trabaja (09:00–13:30)', null, 'horario', null, '{gloria}', null),
   (5, '09:00', 'Álvaro teletrabaja (hasta 17:00)', null, 'horario', null, '{alvaro}', null),
-  (5, '14:00', 'Recoger a Jimena (salida a las 14:00)', 'Comen todos en casa.', 'recogida', 'jimena', '{gloria,alvaro}', null),
-  (5, '14:00', 'Recoger a Mateo (salida a las 14:00)', 'Comen todos en casa.', 'recogida', 'mateo', '{gloria,alvaro}', null),
+  (5, '14:00', 'Recoger a Jimena (salida a las 14:00)', 'Comen todos en casa.', 'recogida', 'jimena', '{gloria}', null),
+  (5, '14:00', 'Recoger a Mateo (salida a las 14:00)', 'Comen todos en casa.', 'recogida', 'mateo', '{alvaro}', null),
   -- DOMINGO
   (7, '10:00', 'Recoger el Carro Beige y llevarlo a tu casa', 'Durante el día, para tenerlo listo el lunes.', 'carrito', null, '{lucia}', 'beige');
 
@@ -114,24 +119,34 @@ create table if not exists public.excepciones (
 );
 
 -- 4. Seguridad ---------------------------------------------------------------
--- App familiar sin login: la anon key puede leer todo, mover carros y gestionar
--- excepciones; NO puede tocar la rutina plantilla. Comparte la URL solo con la familia.
+-- Login por rol (Supabase Auth). El rol vive en app_metadata.rol del usuario
+-- ('abuelos' | 'lucia' | 'padres'); app_metadata solo lo puede cambiar el servidor,
+-- el usuario no. Sin sesión no se lee nada.
 alter table public.carritos enable row level security;
 alter table public.carritos_historial enable row level security;
 alter table public.tareas_rutina enable row level security;
 alter table public.excepciones enable row level security;
+
+create or replace function public.rol_actual() returns text
+language sql stable as $$ select auth.jwt() -> 'app_metadata' ->> 'rol' $$;
 
 drop policy if exists carritos_read on public.carritos;
 drop policy if exists carritos_move on public.carritos;
 drop policy if exists historial_read on public.carritos_historial;
 drop policy if exists tareas_read on public.tareas_rutina;
 drop policy if exists excepciones_all on public.excepciones;
+drop policy if exists excepciones_read on public.excepciones;
+drop policy if exists excepciones_write on public.excepciones;
 
-create policy carritos_read on public.carritos for select using (true);
-create policy carritos_move on public.carritos for update using (true) with check (true);
-create policy historial_read on public.carritos_historial for select using (true);
-create policy tareas_read on public.tareas_rutina for select using (true);
-create policy excepciones_all on public.excepciones for all using (true) with check (true);
+create policy carritos_read on public.carritos for select to authenticated using (public.rol_actual() is not null);
+create policy carritos_move on public.carritos for update to authenticated
+  using (public.rol_actual() is not null) with check (public.rol_actual() is not null);
+create policy historial_read on public.carritos_historial for select to authenticated using (public.rol_actual() is not null);
+create policy tareas_read on public.tareas_rutina for select to authenticated using (public.rol_actual() is not null);
+create policy excepciones_read on public.excepciones for select to authenticated using (public.rol_actual() is not null);
+-- Solo los padres crean/modifican/borran excepciones
+create policy excepciones_write on public.excepciones for all to authenticated
+  using (public.rol_actual() = 'padres') with check (public.rol_actual() = 'padres');
 
 -- 5. Tiempo real -------------------------------------------------------------
 do $$ begin
