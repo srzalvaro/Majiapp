@@ -1,5 +1,4 @@
 # Calendario & Logística Familiar
-
 Next.js (App Router) + Tailwind + Supabase, pensado para móvil.
 
 ## Puesta en marcha
