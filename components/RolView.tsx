@@ -5,15 +5,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import AlertasCarros from "./AlertasCarros";
 import CarritoBadges from "./CarritoBadges";
 import DiaSelector from "./DiaSelector";
+import EventoSheet from "./EventoSheet";
 import ExcepcionSheet from "./ExcepcionSheet";
+import FestivoSheet from "./FestivoSheet";
+import Sheet from "./Sheet";
 import TareaCard from "./TareaCard";
 import { ahora as ahoraFn, etiquetaLarga, hoy as hoyFn, semanaDe, sumarDias } from "@/lib/dates";
 import { alertasCarros } from "@/lib/carros";
 import {
+  borrarDiaEspecial,
+  borrarEvento,
   borrarExcepcion,
   cargarCarritos,
+  cargarDiasEspeciales,
+  cargarEventos,
   cargarExcepciones,
   cargarRutina,
+  crearEvento,
+  guardarDiasEspeciales,
   guardarExcepcion,
   moverCarrito,
   resolverDia,
@@ -21,7 +30,7 @@ import {
 import { rolDeSesion } from "@/lib/auth";
 import type { RolConfig } from "@/lib/roles";
 import { getSupabase } from "@/lib/supabase";
-import type { Carrito, Excepcion, TareaRutina, Ubicacion } from "@/lib/types";
+import type { Carrito, DiaEspecial, Evento, Excepcion, TareaRutina, Ubicacion } from "@/lib/types";
 
 export default function RolView({ rol }: { rol: RolConfig }) {
   const sb = getSupabase();
@@ -34,7 +43,9 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const [excepciones, setExcepciones] = useState<Excepcion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sheet, setSheet] = useState(false);
+  const [especiales, setEspeciales] = useState<DiaEspecial[]>([]);
+  const [eventos, setEventos] = useState<Evento[]>([]);
+  const [sheet, setSheet] = useState<null | "menu" | "excepcion" | "evento" | "festivo">(null);
   const [ahora, setAhora] = useState(ahoraFn);
 
   // Reevalúa las alertas cada minuto
@@ -54,6 +65,19 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const recargarExcepciones = useCallback(async () => {
     if (sb) setExcepciones(await cargarExcepciones(sb, desde, hasta));
   }, [sb, desde, hasta]);
+
+  // Festivos y planes: semana visible + semana actual (para silenciar alertas en festivo)
+  const planDesde = desde < semanaDe(hoy)[0] ? desde : semanaDe(hoy)[0];
+  const planHasta = hasta > semanaDe(hoy)[6] ? hasta : semanaDe(hoy)[6];
+  const recargarPlanes = useCallback(async () => {
+    if (!sb) return;
+    const [d, e] = await Promise.all([
+      cargarDiasEspeciales(sb, planDesde, planHasta),
+      cargarEventos(sb, planDesde, planHasta),
+    ]);
+    setEspeciales(d);
+    setEventos(e);
+  }, [sb, planDesde, planHasta]);
 
   // Sesión: sin login -> /login; un rol que no es "padres" solo ve su vista
   useEffect(() => {
@@ -88,6 +112,11 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     recargarExcepciones().catch((e) => setError(e.message));
   }, [autenticado, recargarExcepciones]);
 
+  useEffect(() => {
+    if (!autenticado) return;
+    recargarPlanes().catch((e) => setError(e.message));
+  }, [autenticado, recargarPlanes]);
+
   // Tiempo real
   useEffect(() => {
     if (!sb || !autenticado) return;
@@ -99,6 +128,12 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "excepciones" }, () =>
         recargarExcepciones().catch((e) => setError(e.message)),
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "dias_especiales" }, () =>
+        recargarPlanes().catch((e) => setError(e.message)),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "eventos" }, () =>
+        recargarPlanes().catch((e) => setError(e.message)),
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "tareas_rutina" }, () =>
         cargarRutina(sb).then(setRutina).catch((e) => setError(e.message)),
       )
@@ -106,9 +141,14 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     return () => {
       sb.removeChannel(canal);
     };
-  }, [sb, autenticado, rol.slug, recargarCarritos, recargarExcepciones]);
+  }, [sb, autenticado, rol.slug, recargarCarritos, recargarExcepciones, recargarPlanes]);
 
-  const tareasDia = useMemo(() => resolverDia(fecha, rutina, excepciones), [fecha, rutina, excepciones]);
+  const tareasDia = useMemo(
+    () => resolverDia(fecha, rutina, excepciones, especiales, eventos),
+    [fecha, rutina, excepciones, especiales, eventos],
+  );
+  const especialDelDia = especiales.find((d) => d.fecha === fecha);
+  const hoyEsEspecial = especiales.some((d) => d.fecha === hoy);
   const visibles = useMemo(
     () =>
       rol.admin
@@ -117,7 +157,22 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     [tareasDia, rol],
   );
   const carritosRol = carritos.filter((c) => rol.carritos.includes(c.id));
-  const alertas = useMemo(() => alertasCarros(rutina, carritosRol, ahora), [rutina, carritosRol, ahora]);
+  // En un día festivo la rutina de carros no aplica: sin alertas hoy
+  const alertas = useMemo(
+    () => (hoyEsEspecial ? [] : alertasCarros(rutina, carritosRol, ahora)),
+    [hoyEsEspecial, rutina, carritosRol, ahora],
+  );
+
+  /** Ejecuta una escritura, refresca datos y cierra la hoja; los errores se muestran arriba. */
+  async function accion(fn: () => Promise<unknown>) {
+    try {
+      await fn();
+      await Promise.all([recargarExcepciones(), recargarPlanes()]);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setSheet(null);
+  }
 
   async function onMover(id: string, ubicacion: Ubicacion) {
     if (!sb) return;
@@ -183,6 +238,17 @@ export default function RolView({ rol }: { rol: RolConfig }) {
           </p>
         )}
 
+        {especialDelDia && (
+          <div className="mx-4 rounded-2xl bg-amber-100 p-4 ring-2 ring-amber-300">
+            <p className={`font-bold text-amber-900 ${rol.grande ? "text-xl" : "text-base"}`}>
+              🎉 {especialDelDia.titulo}
+            </p>
+            <p className={`text-amber-900 ${rol.grande ? "text-lg" : "text-sm"}`}>
+              {especialDelDia.nota ?? "Hoy no hay rutina de cole."}
+            </p>
+          </div>
+        )}
+
         <AlertasCarros alertas={alertas} grande={rol.grande} onMover={onMover} />
         <CarritoBadges carritos={carritosRol} grande={rol.grande} onMover={onMover} />
 
@@ -191,51 +257,78 @@ export default function RolView({ rol }: { rol: RolConfig }) {
             <li className="p-6 text-center text-stone-500">Cargando…</li>
           ) : visibles.length === 0 ? (
             <li className={`rounded-2xl bg-white p-6 text-center text-stone-500 ring-1 ring-stone-200 ${rol.grande ? "text-xl" : ""}`}>
-              Nada que hacer este día 🎉
+              {especialDelDia ? "Sin planes este día" : "Nada que hacer este día"} 🎉
             </li>
           ) : (
-            visibles.map((t) => <TareaCard key={t.id} t={t} grande={rol.grande} />)
+            visibles.map((t) => (
+              <TareaCard
+                key={t.id}
+                t={t}
+                grande={rol.grande}
+                onBorrar={rol.admin && t.eventoId ? () => accion(() => borrarEvento(sb, t.eventoId!)) : undefined}
+              />
+            ))
           )}
         </ul>
       </main>
 
       {rol.admin && (
         <button
-          onClick={() => setSheet(true)}
+          onClick={() => setSheet("menu")}
           className="fixed bottom-5 right-4 z-10 h-14 rounded-full bg-amber-400 px-5 font-semibold shadow-lg active:scale-95"
         >
-          ¿Cambio de planes?
+          ＋ Cambios
         </button>
       )}
 
-      {sheet && (
+      {sheet === "menu" && (
+        <Sheet titulo="¿Qué quieres cambiar?" subtitulo={etiquetaLarga(fecha)} onCerrar={() => setSheet(null)}>
+          <div className="grid gap-2">
+            {[
+              { id: "excepcion", txt: "🔁 Cambiar quién recoge este día" },
+              { id: "evento", txt: "➕ Añadir un plan (fin de semana, abuelos…)" },
+              { id: "festivo", txt: "🎉 Festivo / sin cole (uno o varios días)" },
+            ].map((o) => (
+              <button
+                key={o.id}
+                onClick={() => setSheet(o.id as "excepcion" | "evento" | "festivo")}
+                className="h-14 rounded-xl bg-stone-100 px-4 text-left font-medium active:bg-stone-200"
+              >
+                {o.txt}
+              </button>
+            ))}
+          </div>
+        </Sheet>
+      )}
+
+      {sheet === "excepcion" && (
         <ExcepcionSheet
           key={fecha}
           fecha={fecha}
           etiqueta={etiquetaLarga(fecha)}
           tareas={tareasDia}
           excepciones={excepciones}
-          onCerrar={() => setSheet(false)}
-          onGuardar={async (e) => {
-            try {
-              await guardarExcepcion(sb, e);
-              await recargarExcepciones();
-              setSheet(false);
-            } catch (err) {
-              setError((err as Error).message);
-              setSheet(false);
-            }
-          }}
-          onRestaurar={async (nino) => {
-            try {
-              await borrarExcepcion(sb, fecha, nino);
-              await recargarExcepciones();
-              setSheet(false);
-            } catch (err) {
-              setError((err as Error).message);
-              setSheet(false);
-            }
-          }}
+          onCerrar={() => setSheet(null)}
+          onGuardar={(e) => accion(() => guardarExcepcion(sb, e))}
+          onRestaurar={(nino) => accion(() => borrarExcepcion(sb, fecha, nino))}
+        />
+      )}
+
+      {sheet === "evento" && (
+        <EventoSheet
+          fechaInicial={fecha}
+          onCerrar={() => setSheet(null)}
+          onGuardar={(e) => accion(() => crearEvento(sb, e))}
+        />
+      )}
+
+      {sheet === "festivo" && (
+        <FestivoSheet
+          fechaInicial={fecha}
+          existente={especialDelDia}
+          onCerrar={() => setSheet(null)}
+          onGuardar={(fechas, titulo, nota) => accion(() => guardarDiasEspeciales(sb, fechas, titulo, nota))}
+          onQuitar={() => accion(() => borrarDiaEspecial(sb, fecha))}
         />
       )}
     </div>

@@ -75,28 +75,24 @@ truncate public.tareas_rutina restart identity;
 
 insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino, responsables, carrito) values
   -- LUNES
-  (1, '08:00', 'Gloria trabaja (08:00–15:00)', 'Come en casa de los abuelos.', 'horario', null, '{gloria}', null),
+  (1, '08:30', 'Gloria trabaja en vuestra casa (hasta 15:00)', 'Come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null),
   (1, '08:15', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{abuela}', null),
   (1, '08:30', 'Dejar el Carro Verde en casa de los abuelos', 'Antes de ir al trabajo.', 'carrito', null, '{gloria}', 'verde'),
-  (1, '08:30', 'Álvaro teletrabaja (hasta 17:30)', 'Gym 13:00–14:00.', 'horario', null, '{alvaro}', null),
   (1, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Beige. Comida en el cole.', 'recogida', 'jimena', '{lucia}', 'beige'),
   (1, '16:00', 'Recoger a Mateo en la guardería', null, 'recogida', 'mateo', '{gloria}', null),
   (1, '17:00', 'Llevar el Carro Beige a Casa Familia', 'Los carros acaban el lunes en casa.', 'carrito', null, '{lucia}', 'beige'),
   (1, '17:00', 'Llevar el Carro Verde de casa de los abuelos a Casa Familia', 'Los carros acaban el lunes en casa.', 'carrito', null, '{gloria}', 'verde'),
   -- MARTES
   (2, '09:00', 'Gloria trabaja (09:00–13:30)', null, 'horario', null, '{gloria}', null),
-  (2, '09:00', 'Álvaro teletrabaja (hasta 17:30)', null, 'horario', null, '{alvaro}', null),
   (2, '16:00', 'Recoger a Jimena en el cole', 'Os quedáis la tarde entera con ellos.', 'recogida', 'jimena', '{goyo,abuela}', null),
   (2, '16:00', 'Recoger a Mateo en la guardería', 'Os quedáis la tarde entera con ellos.', 'recogida', 'mateo', '{goyo,abuela}', null),
   -- MIÉRCOLES
-  (3, '08:00', 'Gloria trabaja (08:00–15:00)', 'Come en casa de los abuelos.', 'horario', null, '{gloria}', null),
+  (3, '08:30', 'Gloria trabaja en vuestra casa (hasta 15:00)', 'Come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null),
   (3, '08:15', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{abuela}', null),
-  (3, '08:30', 'Álvaro teletrabaja (para a las 15:50)', null, 'horario', null, '{alvaro}', null),
   (3, '16:00', 'Recoger a Jimena en el cole', 'Tarde con los padres.', 'recogida', 'jimena', '{gloria}', null),
   (3, '16:00', 'Recoger a Mateo en la guardería', 'Tarde con los padres.', 'recogida', 'mateo', '{alvaro}', null),
   -- JUEVES
   (4, '10:00', 'Gloria trabaja (10:00–14:00)', null, 'horario', null, '{gloria}', null),
-  (4, '09:00', 'Álvaro teletrabaja (para a las 16:45)', 'Gym 13:00–14:00.', 'horario', null, '{alvaro}', null),
   (4, '16:00', 'Recoger a Jimena en el cole', 'Tarde con los padres.', 'recogida', 'jimena', '{gloria}', null),
   (4, '16:00', 'Recoger a Mateo en la guardería', 'Tarde con los padres.', 'recogida', 'mateo', '{goyo}', null),
   (4, '17:00', 'Llevar a Jimena y Mateo a inglés', 'Se queda con ellos durante la clase.', 'otro', null, '{alvaro}', null),
@@ -104,7 +100,6 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (4, '17:00', 'Libre desde las 17:00', null, 'horario', null, '{goyo}', null),
   -- VIERNES
   (5, '09:00', 'Gloria trabaja (09:00–13:30)', null, 'horario', null, '{gloria}', null),
-  (5, '09:00', 'Álvaro teletrabaja (hasta 17:00)', null, 'horario', null, '{alvaro}', null),
   (5, '14:00', 'Recoger a Jimena (salida a las 14:00)', 'Comen todos en casa.', 'recogida', 'jimena', '{gloria}', null),
   (5, '14:00', 'Recoger a Mateo (salida a las 14:00)', 'Comen todos en casa.', 'recogida', 'mateo', '{alvaro}', null),
   -- DOMINGO
@@ -126,6 +121,27 @@ create table if not exists public.excepciones (
   unique (fecha, nino)
 );
 
+-- 3b. Días especiales (festivo / sin cole): ese día NO se aplica la rutina semanal
+create table if not exists public.dias_especiales (
+  id bigserial primary key,
+  fecha date not null unique,
+  titulo text not null default 'Festivo',
+  nota text,
+  created_at timestamptz not null default now()
+);
+
+-- 3c. Planes sueltos (p. ej. "Abuelos con los peques el sábado"), aparecen solo a quien se asigna
+create table if not exists public.eventos (
+  id bigserial primary key,
+  fecha date not null,
+  hora text not null check (hora ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),
+  titulo text not null,
+  detalle text,
+  responsables text[] not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists eventos_fecha_idx on public.eventos (fecha);
+
 -- 4. Seguridad ---------------------------------------------------------------
 -- Login por rol (Supabase Auth). El rol vive en app_metadata.rol del usuario
 -- ('abuelos' | 'lucia' | 'padres'); app_metadata solo lo puede cambiar el servidor,
@@ -134,6 +150,8 @@ alter table public.carritos enable row level security;
 alter table public.carritos_historial enable row level security;
 alter table public.tareas_rutina enable row level security;
 alter table public.excepciones enable row level security;
+alter table public.dias_especiales enable row level security;
+alter table public.eventos enable row level security;
 
 create or replace function public.rol_actual() returns text
 language sql stable as $$ select auth.jwt() -> 'app_metadata' ->> 'rol' $$;
@@ -145,6 +163,10 @@ drop policy if exists tareas_read on public.tareas_rutina;
 drop policy if exists excepciones_all on public.excepciones;
 drop policy if exists excepciones_read on public.excepciones;
 drop policy if exists excepciones_write on public.excepciones;
+drop policy if exists especiales_read on public.dias_especiales;
+drop policy if exists especiales_write on public.dias_especiales;
+drop policy if exists eventos_read on public.eventos;
+drop policy if exists eventos_write on public.eventos;
 
 create policy carritos_read on public.carritos for select to authenticated using (public.rol_actual() is not null);
 create policy carritos_move on public.carritos for update to authenticated
@@ -156,9 +178,18 @@ create policy excepciones_read on public.excepciones for select to authenticated
 create policy excepciones_write on public.excepciones for all to authenticated
   using (public.rol_actual() = 'padres') with check (public.rol_actual() = 'padres');
 
+create policy especiales_read on public.dias_especiales for select to authenticated using (public.rol_actual() is not null);
+create policy especiales_write on public.dias_especiales for all to authenticated
+  using (public.rol_actual() = 'padres') with check (public.rol_actual() = 'padres');
+create policy eventos_read on public.eventos for select to authenticated using (public.rol_actual() is not null);
+create policy eventos_write on public.eventos for all to authenticated
+  using (public.rol_actual() = 'padres') with check (public.rol_actual() = 'padres');
+
 -- 5. Tiempo real -------------------------------------------------------------
 do $$ begin
   begin alter publication supabase_realtime add table public.carritos; exception when duplicate_object then null; end;
   begin alter publication supabase_realtime add table public.excepciones; exception when duplicate_object then null; end;
+  begin alter publication supabase_realtime add table public.dias_especiales; exception when duplicate_object then null; end;
+  begin alter publication supabase_realtime add table public.eventos; exception when duplicate_object then null; end;
   begin alter publication supabase_realtime add table public.tareas_rutina; exception when duplicate_object then null; end;
 end $$;

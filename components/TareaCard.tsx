@@ -3,7 +3,15 @@ import type { TareaDia } from "@/lib/types";
 
 const ICONO = { recogida: "🎒", llevar: "🚶", horario: "💼", carrito: "🛒", otro: "📌" } as const;
 
-export default function TareaCard({ t, grande }: { t: TareaDia; grande: boolean }) {
+export default function TareaCard({
+  t,
+  grande,
+  onBorrar,
+}: {
+  t: TareaDia;
+  grande: boolean;
+  onBorrar?: () => void;
+}) {
   return (
     <li
       className={`rounded-2xl bg-white shadow-sm ring-1 ${
@@ -22,6 +30,11 @@ export default function TareaCard({ t, grande }: { t: TareaDia; grande: boolean 
           <p className={`mt-1 text-stone-500 ${grande ? "text-base" : "text-sm"}`}>
             {t.responsables.map((p) => PERSONAS[p]).join(" + ")}
           </p>
+          {onBorrar && (
+            <button onClick={onBorrar} className="mt-2 h-9 rounded-lg bg-stone-100 px-3 text-sm text-stone-700">
+              Borrar plan
+            </button>
+          )}
           {t.modificada && (
             <p className={`mt-2 font-medium text-amber-700 ${grande ? "text-base" : "text-sm"}`}>
               ⚠️ Cambio de planes{t.nota ? `: ${t.nota}` : ""}

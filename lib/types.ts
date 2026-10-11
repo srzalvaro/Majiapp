@@ -35,8 +35,26 @@ export interface Excepcion {
   nota: string | null;
 }
 
+export interface DiaEspecial {
+  id: number;
+  fecha: string;
+  titulo: string;
+  nota: string | null;
+}
+
+export interface Evento {
+  id: number;
+  fecha: string;
+  hora: string;
+  titulo: string;
+  detalle: string | null;
+  responsables: Persona[];
+}
+
 /** Tarea ya resuelta para una fecha concreta (rutina + excepción aplicada). */
 export interface TareaDia extends TareaRutina {
   modificada: boolean;
   nota: string | null;
+  /** Si viene de la tabla `eventos` (plan suelto), su id. */
+  eventoId?: number;
 }
