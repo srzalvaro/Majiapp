@@ -24,6 +24,7 @@ export interface TareaRutina {
   nino: Nino | null;
   responsables: Persona[];
   carrito: "beige" | "verde" | null;
+  destino: Ubicacion | null;
 }
 
 export interface Excepcion {

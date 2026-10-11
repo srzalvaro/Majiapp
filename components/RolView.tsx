@@ -2,11 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import AlertasCarros from "./AlertasCarros";
 import CarritoBadges from "./CarritoBadges";
 import DiaSelector from "./DiaSelector";
 import ExcepcionSheet from "./ExcepcionSheet";
 import TareaCard from "./TareaCard";
-import { etiquetaLarga, hoy as hoyFn, semanaDe, sumarDias } from "@/lib/dates";
+import { ahora as ahoraFn, etiquetaLarga, hoy as hoyFn, semanaDe, sumarDias } from "@/lib/dates";
+import { alertasCarros } from "@/lib/carros";
 import {
   borrarExcepcion,
   cargarCarritos,
@@ -33,6 +35,13 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState(false);
+  const [ahora, setAhora] = useState(ahoraFn);
+
+  // Reevalúa las alertas cada minuto
+  useEffect(() => {
+    const t = setInterval(() => setAhora(ahoraFn()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   const semana = semanaDe(fecha);
   const desde = semana[0];
@@ -108,6 +117,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     [tareasDia, rol],
   );
   const carritosRol = carritos.filter((c) => rol.carritos.includes(c.id));
+  const alertas = useMemo(() => alertasCarros(rutina, carritosRol, ahora), [rutina, carritosRol, ahora]);
 
   async function onMover(id: string, ubicacion: Ubicacion) {
     if (!sb) return;
@@ -132,11 +142,20 @@ export default function RolView({ rol }: { rol: RolConfig }) {
             {rol.emoji} Hola, {rol.saludo}
           </h1>
           <div className="flex items-center gap-2">
-            {fecha !== hoy && (
-              <button onClick={() => setFecha(hoy)} className="rounded-full bg-stone-900 px-3 py-1 text-sm text-white">
-                Hoy
+            {[
+              { txt: "Hoy", f: hoy },
+              { txt: "Mañana", f: sumarDias(hoy, 1) },
+            ].map(({ txt, f }) => (
+              <button
+                key={txt}
+                onClick={() => setFecha(f)}
+                className={`rounded-full px-3 py-1 text-sm ${
+                  fecha === f ? "bg-stone-900 text-white" : "text-stone-700 ring-1 ring-stone-300"
+                }`}
+              >
+                {txt}
               </button>
-            )}
+            ))}
             <button
               onClick={() => sb.auth.signOut()}
               className="rounded-full px-3 py-1 text-sm text-stone-500 ring-1 ring-stone-300"
@@ -164,6 +183,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
           </p>
         )}
 
+        <AlertasCarros alertas={alertas} grande={rol.grande} onMover={onMover} />
         <CarritoBadges carritos={carritosRol} grande={rol.grande} onMover={onMover} />
 
         <ul className="grid gap-3 px-4">

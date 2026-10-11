@@ -65,6 +65,9 @@ create table if not exists public.tareas_rutina (
   responsables text[] not null,
   carrito text references public.carritos(id)
 );
+-- Dónde debe quedar el carro al hacer esta tarea (alertas si no está ahí)
+alter table public.tareas_rutina add column if not exists destino text
+  check (destino in ('Casa Familia', 'Casa Abuelos', 'Casa Tía Lucía'));
 create index if not exists tareas_rutina_dia_idx on public.tareas_rutina (dia_semana, hora);
 
 -- Reset del seed (la rutina es plantilla: se recarga entera)
@@ -106,6 +109,11 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (5, '14:00', 'Recoger a Mateo (salida a las 14:00)', 'Comen todos en casa.', 'recogida', 'mateo', '{alvaro}', null),
   -- DOMINGO
   (7, '10:00', 'Recoger el Carro Beige y llevarlo a tu casa', 'Durante el día, para tenerlo listo el lunes.', 'carrito', null, '{lucia}', 'beige');
+
+update public.tareas_rutina set destino = 'Casa Abuelos'  where carrito = 'verde' and dia_semana = 1 and hora = '08:30';
+update public.tareas_rutina set destino = 'Casa Familia'   where carrito = 'verde' and dia_semana = 1 and hora = '17:00';
+update public.tareas_rutina set destino = 'Casa Tía Lucía' where carrito = 'beige' and dia_semana = 7;
+update public.tareas_rutina set destino = 'Casa Familia'   where carrito = 'beige' and dia_semana = 1 and hora = '17:00';
 
 -- 3. Excepciones puntuales: sustituyen a quién recoge a un niño ese día ------
 create table if not exists public.excepciones (

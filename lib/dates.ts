@@ -42,3 +42,14 @@ export function etiquetaLarga(iso: string): string {
   const mes = new Intl.DateTimeFormat("es-ES", { month: "long", timeZone: "UTC" }).format(aUTC(iso));
   return `${DIAS_LARGO[diaSemana(iso) - 1]} ${numeroDia(iso)} de ${mes}`;
 }
+
+/** Día de la semana (1-7) y hora "HH:MM" ahora mismo en Madrid. */
+export function ahora(): { dia: number; hora: string } {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date());
+  return { dia: diaSemana(hoy()), hora: parts };
+}
