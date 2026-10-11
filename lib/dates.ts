@@ -43,13 +43,13 @@ export function etiquetaLarga(iso: string): string {
   return `${DIAS_LARGO[diaSemana(iso) - 1]} ${numeroDia(iso)} de ${mes}`;
 }
 
-/** Día de la semana (1-7) y hora "HH:MM" ahora mismo en Madrid. */
-export function ahora(): { dia: number; hora: string } {
-  const parts = new Intl.DateTimeFormat("en-GB", {
+/** Fecha y hora "HH:MM" ahora mismo en Madrid. */
+export function ahora(): { fecha: string; hora: string } {
+  const hora = new Intl.DateTimeFormat("en-GB", {
     timeZone: TZ,
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
   }).format(new Date());
-  return { dia: diaSemana(hoy()), hora: parts };
+  return { fecha: hoy(), hora };
 }

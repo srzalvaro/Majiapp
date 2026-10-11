@@ -67,8 +67,10 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   }, [sb, desde, hasta]);
 
   // Festivos y planes: semana visible + semana actual (para silenciar alertas en festivo)
-  const planDesde = desde < semanaDe(hoy)[0] ? desde : semanaDe(hoy)[0];
-  const planHasta = hasta > semanaDe(hoy)[6] ? hasta : semanaDe(hoy)[6];
+  const atras = sumarDias(hoy, -7); // las alertas de carros miran 7 días atrás
+  const adelante = sumarDias(hoy, 1); // y el día siguiente (el domingo prepara el lunes)
+  const planDesde = [desde, atras].sort()[0];
+  const planHasta = [hasta, adelante].sort()[1];
   const recargarPlanes = useCallback(async () => {
     if (!sb) return;
     const [d, e] = await Promise.all([
@@ -148,7 +150,6 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     [fecha, rutina, excepciones, especiales, eventos],
   );
   const especialDelDia = especiales.find((d) => d.fecha === fecha);
-  const hoyEsEspecial = especiales.some((d) => d.fecha === hoy);
   const visibles = useMemo(
     () =>
       rol.admin
@@ -157,10 +158,10 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     [tareasDia, rol],
   );
   const carritosRol = carritos.filter((c) => rol.carritos.includes(c.id));
-  // En un día festivo la rutina de carros no aplica: sin alertas hoy
+  // Alertas con fechas reales: los festivos no cuentan (ver lib/carros.ts)
   const alertas = useMemo(
-    () => (hoyEsEspecial ? [] : alertasCarros(rutina, carritosRol, ahora)),
-    [hoyEsEspecial, rutina, carritosRol, ahora],
+    () => alertasCarros(rutina, carritosRol, ahora, especiales.map((d) => d.fecha)),
+    [rutina, carritosRol, ahora, especiales],
   );
 
   /** Ejecuta una escritura, refresca datos y cierra la hoja; los errores se muestran arriba. */
