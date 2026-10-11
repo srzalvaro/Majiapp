@@ -73,44 +73,55 @@ create index if not exists tareas_rutina_dia_idx on public.tareas_rutina (dia_se
 -- Reset del seed (la rutina es plantilla: se recarga entera)
 truncate public.tareas_rutina restart identity;
 
-insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino, responsables, carrito) values
-  -- LUNES
-  (1, '08:00', 'Gloria trabaja (08:00–15:00)', 'Su cole está al lado de casa de los abuelos.', 'horario', null, '{gloria}', null),
-  (1, '15:00', 'Gloria viene a comer a vuestra casa', 'Sale del cole a las 15:00 y come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null),
-  (1, '08:15', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{abuela}', null),
-  (1, '08:30', 'Dejar el Carro Verde en casa de los abuelos', 'Antes de ir al trabajo.', 'carrito', null, '{gloria}', 'verde'),
-  (1, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Beige. Comida en el cole.', 'recogida', 'jimena', '{lucia}', 'beige'),
-  (1, '16:00', 'Recoger a Mateo en la guardería', null, 'recogida', 'mateo', '{gloria}', null),
-  (1, '17:00', 'Llevar el Carro Beige a Casa Familia', 'Los carros acaban el lunes en casa.', 'carrito', null, '{lucia}', 'beige'),
-  (1, '17:00', 'Llevar el Carro Verde de casa de los abuelos a Casa Familia', 'Los carros acaban el lunes en casa.', 'carrito', null, '{gloria}', 'verde'),
-  -- MARTES
-  (2, '09:00', 'Gloria trabaja (09:00–13:30)', null, 'horario', null, '{gloria}', null),
-  (2, '16:00', 'Recoger a Jimena en el cole', 'Os quedáis la tarde entera con ellos.', 'recogida', 'jimena', '{goyo,abuela}', null),
-  (2, '16:00', 'Recoger a Mateo en la guardería', 'Os quedáis la tarde entera con ellos.', 'recogida', 'mateo', '{goyo,abuela}', null),
+-- Fundición = Casa Familia · Viveros = Casa Abuelos.
+-- Las tareas con "destino" alimentan las alertas de carros (si a su hora el carro no está ahí).
+-- Las que llevan carrito pero no destino son solo informativas.
+insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino, responsables, carrito, destino) values
+  -- LUNES · el Beige llega de casa de Lucía (domingo)
+  (1, '08:00', 'Gloria trabaja (08:00–15:00)', 'Su cole está al lado de casa de los abuelos.', 'horario', null, '{gloria}', null, null),
+  (1, '08:15', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{abuela}', null, null),
+  (1, '09:30', 'Llevar el Carro Verde a Viveros (casa de los abuelos)', 'Desde Fundición.', 'carrito', null, '{abuela}', 'verde', 'Casa Abuelos'),
+  (1, '15:00', 'Gloria viene a comer a vuestra casa', 'Sale del cole a las 15:00 y come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null, null),
+  (1, '15:30', 'Gloria se lleva el Carro Verde después de comer', 'Para recoger a Mateo.', 'carrito', null, '{gloria,goyo,abuela}', 'verde', null),
+  (1, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Beige (que Lucía tiene desde el domingo).', 'recogida', 'jimena', '{lucia}', 'beige', null),
+  (1, '16:00', 'Recoger a Mateo en la guardería', 'Con el Carro Verde.', 'recogida', 'mateo', '{gloria}', 'verde', null),
+  (1, '17:00', 'Llevar el Carro Beige a Fundición (Casa Familia)', 'Los carros acaban el lunes en casa.', 'carrito', null, '{lucia}', 'beige', 'Casa Familia'),
+  (1, '17:00', 'Llevar el Carro Verde a Fundición (Casa Familia)', 'Los carros acaban el lunes en casa.', 'carrito', null, '{gloria}', 'verde', 'Casa Familia'),
+  -- MARTES · abuelos con los dos carros por la tarde
+  (2, '08:30', 'Llevar el Carro Verde a Viveros (casa de los abuelos)', 'Por la mañana, antes de ir a trabajar.', 'carrito', null, '{gloria}', 'verde', 'Casa Abuelos'),
+  (2, '09:00', 'Gloria trabaja (09:00–13:30)', null, 'horario', null, '{gloria}', null, null),
+  (2, '15:00', 'Pasar por Fundición a por el Carro Beige', 'En algún momento antes de recoger a los peques.', 'carrito', null, '{goyo,abuela}', 'beige', 'Casa Abuelos'),
+  (2, '16:00', 'Recoger a Jimena en el cole', 'Con carro individual (Beige). Os quedáis la tarde entera con ellos.', 'recogida', 'jimena', '{goyo,abuela}', 'beige', null),
+  (2, '16:00', 'Recoger a Mateo en la guardería', 'Con carro individual (Verde). Os quedáis la tarde entera con ellos.', 'recogida', 'mateo', '{goyo,abuela}', 'verde', null),
+  (2, '20:00', 'Dejar el Carro Verde en Fundición (Casa Familia)', 'Por la noche, al traer a los peques.', 'carrito', null, '{goyo,abuela}', 'verde', 'Casa Familia'),
+  (2, '20:00', 'Llevaros el Carro Beige a Viveros', 'Se queda en vuestra casa esta noche.', 'carrito', null, '{goyo,abuela}', 'beige', 'Casa Abuelos'),
   -- MIÉRCOLES
-  (3, '08:00', 'Gloria trabaja (08:00–15:00)', 'Su cole está al lado de casa de los abuelos.', 'horario', null, '{gloria}', null),
-  (3, '15:00', 'Gloria viene a comer a vuestra casa', 'Sale del cole a las 15:00 y come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null),
-  (3, '08:15', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{abuela}', null),
-  (3, '16:00', 'Recoger a Jimena en el cole', 'Tarde con los padres.', 'recogida', 'jimena', '{gloria}', null),
-  (3, '16:00', 'Recoger a Mateo en la guardería', 'Tarde con los padres.', 'recogida', 'mateo', '{alvaro}', null),
+  (3, '08:00', 'Gloria trabaja (08:00–15:00)', 'Su cole está al lado de casa de los abuelos.', 'horario', null, '{gloria}', null, null),
+  (3, '08:15', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{abuela}', null, null),
+  (3, '09:30', 'Llevar el Carro Verde de Fundición a Viveros', 'Lo dejas en casa de los abuelos.', 'carrito', null, '{abuela}', 'verde', 'Casa Abuelos'),
+  (3, '15:00', 'Gloria viene a comer a vuestra casa', 'Sale del cole a las 15:00 y come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null, null),
+  (3, '15:30', 'Gloria coge el Carro Beige en Viveros', 'Para recoger a Jimena.', 'carrito', null, '{gloria,goyo,abuela}', 'beige', null),
+  (3, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Beige. Tarde con los padres.', 'recogida', 'jimena', '{gloria}', 'beige', null),
+  (3, '16:00', 'Recoger a Mateo y traerlo a Fundición', 'Con el Carro Verde. Tarde con los padres.', 'recogida', 'mateo', '{abuela}', 'verde', null),
+  (3, '17:30', 'Carro Verde en Fundición (Casa Familia)', 'La abuela lo trae con Mateo.', 'carrito', null, '{abuela}', 'verde', 'Casa Familia'),
+  (3, '17:30', 'Carro Beige en Fundición (Casa Familia)', 'Gloria lo trae con Jimena.', 'carrito', null, '{gloria}', 'beige', 'Casa Familia'),
   -- JUEVES
-  (4, '10:00', 'Gloria trabaja (10:00–14:00)', null, 'horario', null, '{gloria}', null),
-  (4, '16:00', 'Recoger a Jimena en el cole', 'Tarde con los padres.', 'recogida', 'jimena', '{gloria}', null),
-  (4, '16:00', 'Recoger a Mateo en la guardería', 'Tarde con los padres.', 'recogida', 'mateo', '{goyo}', null),
-  (4, '17:00', 'Llevar a Jimena y Mateo a inglés', 'Se queda con ellos durante la clase.', 'otro', null, '{alvaro}', null),
-  (4, '17:00', 'Gimnasio (17:00–18:00)', null, 'horario', null, '{gloria}', null),
-  (4, '17:00', 'Libre desde las 17:00', null, 'horario', null, '{goyo}', null),
+  (4, '10:00', 'Gloria trabaja (10:00–14:00)', null, 'horario', null, '{gloria}', null, null),
+  (4, '15:00', 'Coger el Carro Beige en Fundición y llevarlo a Viveros', 'Para recoger a Mateo.', 'carrito', null, '{goyo,abuela}', 'beige', 'Casa Abuelos'),
+  (4, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Verde. Tarde con los padres.', 'recogida', 'jimena', '{gloria}', 'verde', null),
+  (4, '16:00', 'Recoger a Mateo en la guardería', 'Con el Carro Beige (el de Viveros).', 'recogida', 'mateo', '{goyo}', 'beige', null),
+  (4, '17:00', 'Llevar a Jimena y Mateo a inglés', 'Se queda con ellos durante la clase.', 'otro', null, '{alvaro}', null, null),
+  (4, '17:00', 'Gimnasio (17:00–18:00)', null, 'horario', null, '{gloria}', null, null),
+  (4, '17:00', 'Libre desde las 17:00', null, 'horario', null, '{goyo}', null, null),
+  (4, '19:00', 'Los dos carros vuelven a Fundición (Casa Familia)', 'Al final de la tarde. Trae el Beige de Viveros.', 'carrito', null, '{goyo,abuela}', 'beige', 'Casa Familia'),
+  (4, '19:00', 'Carro Verde en Fundición (Casa Familia)', null, 'carrito', null, '{gloria}', 'verde', 'Casa Familia'),
   -- VIERNES
-  (5, '09:00', 'Gloria trabaja (09:00–13:30)', null, 'horario', null, '{gloria}', null),
-  (5, '14:00', 'Recoger a Jimena (salida a las 14:00)', 'Comen todos en casa.', 'recogida', 'jimena', '{gloria}', null),
-  (5, '14:00', 'Recoger a Mateo (salida a las 14:00)', 'Comen todos en casa.', 'recogida', 'mateo', '{alvaro}', null),
+  (5, '08:15', 'Llevar a Mateo a la guardería con el Carro Beige', 'Después te llevas el carro al cole.', 'llevar', 'mateo', '{gloria}', 'beige', null),
+  (5, '09:00', 'Gloria trabaja (09:00–13:30)', null, 'horario', null, '{gloria}', null, null),
+  (5, '14:00', 'Recoger a Jimena (salida a las 14:00)', 'Con el Carro Beige. Comen todos en casa.', 'recogida', 'jimena', '{gloria}', 'beige', null),
+  (5, '14:00', 'Recoger a Mateo (salida a las 14:00)', 'Con el Carro Verde. Comen todos en casa.', 'recogida', 'mateo', '{alvaro}', 'verde', null),
   -- DOMINGO
-  (7, '10:00', 'Recoger el Carro Beige y llevarlo a tu casa', 'Durante el día, para tenerlo listo el lunes.', 'carrito', null, '{lucia}', 'beige');
-
-update public.tareas_rutina set destino = 'Casa Abuelos'  where carrito = 'verde' and dia_semana = 1 and hora = '08:30';
-update public.tareas_rutina set destino = 'Casa Familia'   where carrito = 'verde' and dia_semana = 1 and hora = '17:00';
-update public.tareas_rutina set destino = 'Casa Tía Lucía' where carrito = 'beige' and dia_semana = 7;
-update public.tareas_rutina set destino = 'Casa Familia'   where carrito = 'beige' and dia_semana = 1 and hora = '17:00';
+  (7, '10:00', 'Recoger el Carro Beige y llevarlo a tu casa', 'Durante el día, para tenerlo listo el lunes.', 'carrito', null, '{lucia}', 'beige', 'Casa Tía Lucía');
 
 -- 3. Excepciones puntuales: sustituyen a quién recoge a un niño ese día ------
 create table if not exists public.excepciones (
