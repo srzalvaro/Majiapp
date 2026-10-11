@@ -75,7 +75,8 @@ truncate public.tareas_rutina restart identity;
 
 insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino, responsables, carrito) values
   -- LUNES
-  (1, '08:30', 'Gloria trabaja en vuestra casa (hasta 15:00)', 'Come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null),
+  (1, '08:00', 'Gloria trabaja (08:00–15:00)', 'Su cole está al lado de casa de los abuelos.', 'horario', null, '{gloria}', null),
+  (1, '15:00', 'Gloria viene a comer a vuestra casa', 'Sale del cole a las 15:00 y come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null),
   (1, '08:15', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{abuela}', null),
   (1, '08:30', 'Dejar el Carro Verde en casa de los abuelos', 'Antes de ir al trabajo.', 'carrito', null, '{gloria}', 'verde'),
   (1, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Beige. Comida en el cole.', 'recogida', 'jimena', '{lucia}', 'beige'),
@@ -87,7 +88,8 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (2, '16:00', 'Recoger a Jimena en el cole', 'Os quedáis la tarde entera con ellos.', 'recogida', 'jimena', '{goyo,abuela}', null),
   (2, '16:00', 'Recoger a Mateo en la guardería', 'Os quedáis la tarde entera con ellos.', 'recogida', 'mateo', '{goyo,abuela}', null),
   -- MIÉRCOLES
-  (3, '08:30', 'Gloria trabaja en vuestra casa (hasta 15:00)', 'Come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null),
+  (3, '08:00', 'Gloria trabaja (08:00–15:00)', 'Su cole está al lado de casa de los abuelos.', 'horario', null, '{gloria}', null),
+  (3, '15:00', 'Gloria viene a comer a vuestra casa', 'Sale del cole a las 15:00 y come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null),
   (3, '08:15', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{abuela}', null),
   (3, '16:00', 'Recoger a Jimena en el cole', 'Tarde con los padres.', 'recogida', 'jimena', '{gloria}', null),
   (3, '16:00', 'Recoger a Mateo en la guardería', 'Tarde con los padres.', 'recogida', 'mateo', '{alvaro}', null),
