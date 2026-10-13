@@ -10,6 +10,7 @@ import ExcepcionSheet from "./ExcepcionSheet";
 import FestivoSheet from "./FestivoSheet";
 import Sheet from "./Sheet";
 import TareaCard from "./TareaCard";
+import VistaSencilla from "./VistaSencilla";
 import { ahora as ahoraFn, etiquetaLarga, hoy as hoyFn, semanaDe, sumarDias } from "@/lib/dates";
 import { alertasCarros } from "@/lib/carros";
 import {
@@ -40,7 +41,9 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const router = useRouter();
   const [autenticado, setAutenticado] = useState(false);
   const hoy = useMemo(hoyFn, []);
-  const [fecha, setFecha] = useState(hoy);
+  const [fecha, setFecha] = useState(() =>
+    rol.grande && ahoraFn().hora >= "20:00" ? sumarDias(hoyFn(), 1) : hoyFn(),
+  );
   const [rutina, setRutina] = useState<TareaRutina[]>([]);
   const [carritos, setCarritos] = useState<Carrito[]>([]);
   const [excepciones, setExcepciones] = useState<Excepcion[]>([]);
@@ -67,8 +70,8 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   }, [sb]);
 
   const recargarExcepciones = useCallback(async () => {
-    if (sb) setExcepciones(await cargarExcepciones(sb, desde, hasta));
-  }, [sb, desde, hasta]);
+    if (sb) setExcepciones(await cargarExcepciones(sb, desde, [hasta, sumarDias(hoy, 1)].sort()[1]));
+  }, [sb, desde, hasta, hoy]);
 
   // Festivos y planes: semana visible + semana actual (para silenciar alertas en festivo)
   const atras = sumarDias(hoy, -7); // las alertas de carros miran 7 días atrás
@@ -163,14 +166,21 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     () => new Set(hechas.filter((h) => h.fecha === fecha).map((h) => h.tarea_key)),
     [hechas, fecha],
   );
+  const delRol = useCallback(
+    (ts: TareaDia[]) =>
+      rol.admin ? ts : ts.filter((t) => t.responsables.some((p) => rol.personas.includes(p))),
+    [rol],
+  );
+  const esHecha = useCallback((t: TareaDia) => t.tipo !== "horario" && hechasDia.has(t.key), [hechasDia]);
+  // pendientes primero (por hora), hechas al final; las de solo información no cuentan
   const visibles = useMemo(() => {
-    const mias = rol.admin
-      ? tareasDia
-      : tareasDia.filter((t) => t.responsables.some((p) => rol.personas.includes(p)));
-    // pendientes primero (por hora), hechas al final; las de solo información no cuentan
-    const hecha = (t: TareaDia) => t.tipo !== "horario" && hechasDia.has(t.key);
-    return [...mias.filter((t) => !hecha(t)), ...mias.filter(hecha)];
-  }, [tareasDia, rol, hechasDia]);
+    const mias = delRol(tareasDia);
+    return [...mias.filter((t) => !esHecha(t)), ...mias.filter(esHecha)];
+  }, [tareasDia, delRol, esHecha]);
+  const tareasManana = useMemo(
+    () => delRol(resolverDia(sumarDias(hoy, 1), rutina, excepciones, especiales, eventos)),
+    [delRol, hoy, rutina, excepciones, especiales, eventos],
+  );
   const carritosRol = carritos.filter((c) => rol.carritos.includes(c.id));
   // Alertas con fechas reales: los festivos no cuentan (ver lib/carros.ts)
   const alertas = useMemo(
@@ -234,6 +244,29 @@ export default function RolView({ rol }: { rol: RolConfig }) {
 
   if (!sb) return <SetupAviso />;
   if (!autenticado) return <p className="p-6 text-stone-500">Cargando…</p>;
+
+  if (rol.grande) {
+    return (
+      <VistaSencilla
+        rol={rol}
+        hoy={hoy}
+        fecha={fecha}
+        setFecha={setFecha}
+        error={error}
+        cargando={cargando}
+        especialDelDia={especialDelDia}
+        alertas={alertas}
+        carritos={carritosRol}
+        pendientes={visibles.filter((t) => !esHecha(t))}
+        completadas={visibles.filter(esHecha)}
+        manana={tareasManana}
+        onMover={onMover}
+        onHecho={onHecho}
+        onDeshacer={onDeshacer}
+        onSalir={() => sb.auth.signOut()}
+      />
+    );
+  }
 
   return (
     <div className="pb-28">
