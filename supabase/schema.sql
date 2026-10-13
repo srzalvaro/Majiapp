@@ -156,6 +156,16 @@ create table if not exists public.eventos (
 );
 create index if not exists eventos_fecha_idx on public.eventos (fecha);
 
+-- 3d. Tareas marcadas como hechas (por fecha). tarea_key: 'r:<id>' rutina · 'e:<id>' plan suelto
+create table if not exists public.tareas_hechas (
+  id bigserial primary key,
+  fecha date not null,
+  tarea_key text not null,
+  hecho_por text,
+  created_at timestamptz not null default now(),
+  unique (fecha, tarea_key)
+);
+
 -- 4. Seguridad ---------------------------------------------------------------
 -- Login por rol (Supabase Auth). El rol vive en app_metadata.rol del usuario
 -- ('abuelos' | 'lucia' | 'padres'); app_metadata solo lo puede cambiar el servidor,
@@ -166,6 +176,7 @@ alter table public.tareas_rutina enable row level security;
 alter table public.excepciones enable row level security;
 alter table public.dias_especiales enable row level security;
 alter table public.eventos enable row level security;
+alter table public.tareas_hechas enable row level security;
 
 create or replace function public.rol_actual() returns text
 language sql stable as $$ select auth.jwt() -> 'app_metadata' ->> 'rol' $$;
@@ -181,6 +192,7 @@ drop policy if exists especiales_read on public.dias_especiales;
 drop policy if exists especiales_write on public.dias_especiales;
 drop policy if exists eventos_read on public.eventos;
 drop policy if exists eventos_write on public.eventos;
+drop policy if exists hechas_all on public.tareas_hechas;
 
 create policy carritos_read on public.carritos for select to authenticated using (public.rol_actual() is not null);
 create policy carritos_move on public.carritos for update to authenticated
@@ -199,11 +211,16 @@ create policy eventos_read on public.eventos for select to authenticated using (
 create policy eventos_write on public.eventos for all to authenticated
   using (public.rol_actual() = 'padres') with check (public.rol_actual() = 'padres');
 
+-- Cualquier rol puede marcar/desmarcar tareas como hechas
+create policy hechas_all on public.tareas_hechas for all to authenticated
+  using (public.rol_actual() is not null) with check (public.rol_actual() is not null);
+
 -- 5. Tiempo real -------------------------------------------------------------
 do $$ begin
   begin alter publication supabase_realtime add table public.carritos; exception when duplicate_object then null; end;
   begin alter publication supabase_realtime add table public.excepciones; exception when duplicate_object then null; end;
   begin alter publication supabase_realtime add table public.dias_especiales; exception when duplicate_object then null; end;
   begin alter publication supabase_realtime add table public.eventos; exception when duplicate_object then null; end;
+  begin alter publication supabase_realtime add table public.tareas_hechas; exception when duplicate_object then null; end;
   begin alter publication supabase_realtime add table public.tareas_rutina; exception when duplicate_object then null; end;
 end $$;

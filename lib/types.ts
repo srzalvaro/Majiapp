@@ -51,8 +51,15 @@ export interface Evento {
   responsables: Persona[];
 }
 
+export interface Hecha {
+  fecha: string;
+  tarea_key: string;
+}
+
 /** Tarea ya resuelta para una fecha concreta (rutina + excepción aplicada). */
 export interface TareaDia extends TareaRutina {
+  /** Clave única de la tarea en un día: 'r:<id>' rutina · 'e:<id>' plan suelto. */
+  key: string;
   modificada: boolean;
   nota: string | null;
   /** Si viene de la tabla `eventos` (plan suelto), su id. */

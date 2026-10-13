@@ -21,16 +21,19 @@ import {
   cargarEventos,
   cargarExcepciones,
   cargarRutina,
+  cargarHechas,
   crearEvento,
+  desmarcarHecha,
   guardarDiasEspeciales,
   guardarExcepcion,
+  marcarHecha,
   moverCarrito,
   resolverDia,
 } from "@/lib/queries";
 import { rolDeSesion } from "@/lib/auth";
 import type { RolConfig } from "@/lib/roles";
 import { getSupabase } from "@/lib/supabase";
-import type { Carrito, DiaEspecial, Evento, Excepcion, TareaRutina, Ubicacion } from "@/lib/types";
+import type { Carrito, DiaEspecial, Evento, Excepcion, Hecha, TareaDia, TareaRutina, Ubicacion } from "@/lib/types";
 
 export default function RolView({ rol }: { rol: RolConfig }) {
   const sb = getSupabase();
@@ -45,6 +48,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const [error, setError] = useState<string | null>(null);
   const [especiales, setEspeciales] = useState<DiaEspecial[]>([]);
   const [eventos, setEventos] = useState<Evento[]>([]);
+  const [hechas, setHechas] = useState<Hecha[]>([]);
   const [sheet, setSheet] = useState<null | "menu" | "excepcion" | "evento" | "festivo">(null);
   const [ahora, setAhora] = useState(ahoraFn);
 
@@ -73,12 +77,14 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const planHasta = [hasta, adelante].sort()[1];
   const recargarPlanes = useCallback(async () => {
     if (!sb) return;
-    const [d, e] = await Promise.all([
+    const [d, e, h] = await Promise.all([
       cargarDiasEspeciales(sb, planDesde, planHasta),
       cargarEventos(sb, planDesde, planHasta),
+      cargarHechas(sb, planDesde, planHasta),
     ]);
     setEspeciales(d);
     setEventos(e);
+    setHechas(h);
   }, [sb, planDesde, planHasta]);
 
   // Sesión: sin login -> /login; un rol que no es "padres" solo ve su vista
@@ -136,6 +142,9 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "eventos" }, () =>
         recargarPlanes().catch((e) => setError(e.message)),
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "tareas_hechas" }, () =>
+        recargarPlanes().catch((e) => setError(e.message)),
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "tareas_rutina" }, () =>
         cargarRutina(sb).then(setRutina).catch((e) => setError(e.message)),
       )
@@ -150,19 +159,46 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     [fecha, rutina, excepciones, especiales, eventos],
   );
   const especialDelDia = especiales.find((d) => d.fecha === fecha);
-  const visibles = useMemo(
-    () =>
-      rol.admin
-        ? tareasDia
-        : tareasDia.filter((t) => t.responsables.some((p) => rol.personas.includes(p))),
-    [tareasDia, rol],
+  const hechasDia = useMemo(
+    () => new Set(hechas.filter((h) => h.fecha === fecha).map((h) => h.tarea_key)),
+    [hechas, fecha],
   );
+  const visibles = useMemo(() => {
+    const mias = rol.admin
+      ? tareasDia
+      : tareasDia.filter((t) => t.responsables.some((p) => rol.personas.includes(p)));
+    // pendientes primero (por hora), hechas al final; las de solo información no cuentan
+    const hecha = (t: TareaDia) => t.tipo !== "horario" && hechasDia.has(t.key);
+    return [...mias.filter((t) => !hecha(t)), ...mias.filter(hecha)];
+  }, [tareasDia, rol, hechasDia]);
   const carritosRol = carritos.filter((c) => rol.carritos.includes(c.id));
   // Alertas con fechas reales: los festivos no cuentan (ver lib/carros.ts)
   const alertas = useMemo(
     () => alertasCarros(rutina, carritosRol, ahora, especiales.map((d) => d.fecha)),
     [rutina, carritosRol, ahora, especiales],
   );
+
+  async function onHecho(t: TareaDia) {
+    if (!sb) return;
+    try {
+      await marcarHecha(sb, fecha, t.key, rol.titulo);
+      await recargarPlanes();
+      // Tarea de carro de hoy: además deja el carro en su destino
+      if (fecha === hoy && t.carrito && t.destino) await onMover(t.carrito, t.destino);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  async function onDeshacer(t: TareaDia) {
+    if (!sb) return;
+    try {
+      await desmarcarHecha(sb, fecha, t.key);
+      await recargarPlanes();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
 
   /** Ejecuta una escritura, refresca datos y cierra la hoja; los errores se muestran arriba. */
   async function accion(fn: () => Promise<unknown>) {
@@ -181,6 +217,15 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     setCarritos((cs) => cs.map((c) => (c.id === id ? { ...c, ubicacion_actual: ubicacion } : c)));
     try {
       await moverCarrito(sb, id, ubicacion, rol.titulo);
+      // Si hoy hay tareas de ese carro cuyo destino es esta ubicación, quedan hechas
+      const ya = new Set(hechas.filter((h) => h.fecha === hoy).map((h) => h.tarea_key));
+      const pendientes = resolverDia(hoy, rutina, [], especiales, eventos).filter(
+        (t) => t.carrito === id && t.destino === ubicacion && !ya.has(t.key),
+      );
+      if (pendientes.length) {
+        await Promise.all(pendientes.map((t) => marcarHecha(sb, hoy, t.key, rol.titulo)));
+        await recargarPlanes();
+      }
     } catch (e) {
       setCarritos(previo);
       setError((e as Error).message);
@@ -266,6 +311,9 @@ export default function RolView({ rol }: { rol: RolConfig }) {
                 key={t.id}
                 t={t}
                 grande={rol.grande}
+                hecha={t.tipo !== "horario" && hechasDia.has(t.key)}
+                onHecho={() => onHecho(t)}
+                onDeshacer={() => onDeshacer(t)}
                 onBorrar={rol.admin && t.eventoId ? () => accion(() => borrarEvento(sb, t.eventoId!)) : undefined}
               />
             ))

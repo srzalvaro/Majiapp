@@ -6,22 +6,28 @@ const ICONO = { recogida: "🎒", llevar: "🚶", horario: "💼", carrito: "�
 export default function TareaCard({
   t,
   grande,
+  hecha,
+  onHecho,
+  onDeshacer,
   onBorrar,
 }: {
   t: TareaDia;
   grande: boolean;
+  hecha: boolean;
+  onHecho: () => void;
+  onDeshacer: () => void;
   onBorrar?: () => void;
 }) {
   return (
     <li
-      className={`rounded-2xl bg-white shadow-sm ring-1 ${
+      className={`rounded-2xl bg-white shadow-sm ring-1 ${hecha ? "opacity-60" : ""} ${
         t.modificada ? "ring-2 ring-amber-400" : "ring-stone-200"
       } ${grande ? "p-5" : "p-3"}`}
     >
       <div className="flex gap-3">
         <div className={grande ? "text-3xl" : "text-2xl"}>{ICONO[t.tipo]}</div>
         <div className="min-w-0 flex-1">
-          <p className={`font-bold ${grande ? "text-2xl" : "text-base"}`}>
+          <p className={`font-bold ${grande ? "text-2xl" : "text-base"} ${hecha ? "line-through" : ""}`}>
             {t.hora} <span className="font-semibold">· {t.titulo}</span>
           </p>
           {t.detalle && (
@@ -30,6 +36,24 @@ export default function TareaCard({
           <p className={`mt-1 text-stone-500 ${grande ? "text-base" : "text-sm"}`}>
             {t.responsables.map((p) => PERSONAS[p]).join(" + ")}
           </p>
+          {t.tipo !== "horario" &&
+            (hecha ? (
+              <div className="mt-2 flex items-center gap-3">
+                <span className={`font-semibold text-verde-dark ${grande ? "text-lg" : "text-sm"}`}>✅ Hecho</span>
+                <button onClick={onDeshacer} className="h-9 rounded-lg px-3 text-sm text-stone-500 ring-1 ring-stone-300">
+                  Deshacer
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onHecho}
+                className={`mt-3 rounded-xl bg-verde font-semibold text-white active:scale-95 ${
+                  grande ? "h-12 px-6 text-lg" : "h-10 px-4"
+                }`}
+              >
+                ✓ Hecho{t.carrito && t.destino ? ` · carro en ${t.destino.replace("Casa ", "")}` : ""}
+              </button>
+            ))}
           {onBorrar && (
             <button onClick={onBorrar} className="mt-2 h-9 rounded-lg bg-stone-100 px-3 text-sm text-stone-700">
               Borrar plan
