@@ -12,7 +12,7 @@ import Sheet from "./Sheet";
 import TareaCard from "./TareaCard";
 import VistaSencilla from "./VistaSencilla";
 import { ahora as ahoraFn, etiquetaLarga, hoy as hoyFn, semanaDe, sumarDias } from "@/lib/dates";
-import { alertasCarros } from "@/lib/carros";
+import { alertasCarros, type AlertaCarro } from "@/lib/carros";
 import {
   borrarDiaEspecial,
   borrarEvento,
@@ -23,18 +23,21 @@ import {
   cargarExcepciones,
   cargarRutina,
   cargarHechas,
+  cargarOmitidas,
   crearEvento,
   desmarcarHecha,
   guardarDiasEspeciales,
   guardarExcepcion,
   marcarHecha,
   moverCarrito,
+  omitirTarea,
+  restaurarTarea,
   resolverDia,
 } from "@/lib/queries";
 import { rolDeSesion } from "@/lib/auth";
 import type { RolConfig } from "@/lib/roles";
 import { getSupabase } from "@/lib/supabase";
-import type { Carrito, DiaEspecial, Evento, Excepcion, Hecha, TareaDia, TareaRutina, Ubicacion } from "@/lib/types";
+import type { Carrito, DiaEspecial, Evento, Excepcion, Hecha, Omitida, TareaDia, TareaRutina, Ubicacion } from "@/lib/types";
 
 export default function RolView({ rol }: { rol: RolConfig }) {
   const sb = getSupabase();
@@ -52,6 +55,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const [especiales, setEspeciales] = useState<DiaEspecial[]>([]);
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [hechas, setHechas] = useState<Hecha[]>([]);
+  const [omitidas, setOmitidas] = useState<Omitida[]>([]);
   const [sheet, setSheet] = useState<null | "menu" | "excepcion" | "evento" | "festivo">(null);
   const [ahora, setAhora] = useState(ahoraFn);
 
@@ -80,14 +84,16 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const planHasta = [hasta, adelante].sort()[1];
   const recargarPlanes = useCallback(async () => {
     if (!sb) return;
-    const [d, e, h] = await Promise.all([
+    const [d, e, h, o] = await Promise.all([
       cargarDiasEspeciales(sb, planDesde, planHasta),
       cargarEventos(sb, planDesde, planHasta),
       cargarHechas(sb, planDesde, planHasta),
+      cargarOmitidas(sb, planDesde, planHasta),
     ]);
     setEspeciales(d);
     setEventos(e);
     setHechas(h);
+    setOmitidas(o);
   }, [sb, planDesde, planHasta]);
 
   // Sesión: sin login -> /login; un rol que no es "padres" solo ve su vista
@@ -148,6 +154,9 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "tareas_hechas" }, () =>
         recargarPlanes().catch((e) => setError(e.message)),
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "tareas_omitidas" }, () =>
+        recargarPlanes().catch((e) => setError(e.message)),
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "tareas_rutina" }, () =>
         cargarRutina(sb).then(setRutina).catch((e) => setError(e.message)),
       )
@@ -158,8 +167,8 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   }, [sb, autenticado, rol.slug, recargarCarritos, recargarExcepciones, recargarPlanes]);
 
   const tareasDia = useMemo(
-    () => resolverDia(fecha, rutina, excepciones, especiales, eventos),
-    [fecha, rutina, excepciones, especiales, eventos],
+    () => resolverDia(fecha, rutina, excepciones, especiales, eventos, omitidas),
+    [fecha, rutina, excepciones, especiales, eventos, omitidas],
   );
   const especialDelDia = especiales.find((d) => d.fecha === fecha);
   const hechasDia = useMemo(
@@ -168,24 +177,34 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   );
   const delRol = useCallback(
     (ts: TareaDia[]) =>
-      rol.admin ? ts : ts.filter((t) => t.responsables.some((p) => rol.personas.includes(p))),
+      rol.admin
+        ? ts
+        : ts.filter((t) => !t.omitida && t.responsables.some((p) => rol.personas.includes(p))),
     [rol],
   );
   const esHecha = useCallback((t: TareaDia) => t.tipo !== "horario" && hechasDia.has(t.key), [hechasDia]);
   // pendientes primero (por hora), hechas al final; las de solo información no cuentan
   const visibles = useMemo(() => {
     const mias = delRol(tareasDia);
-    return [...mias.filter((t) => !esHecha(t)), ...mias.filter(esHecha)];
+    const activas = mias.filter((t) => !t.omitida);
+    // las omitidas (solo las ven los padres) van al final
+    return [...activas.filter((t) => !esHecha(t)), ...activas.filter(esHecha), ...mias.filter((t) => t.omitida)];
   }, [tareasDia, delRol, esHecha]);
   const tareasManana = useMemo(
-    () => delRol(resolverDia(sumarDias(hoy, 1), rutina, excepciones, especiales, eventos)),
-    [delRol, hoy, rutina, excepciones, especiales, eventos],
+    () => delRol(resolverDia(sumarDias(hoy, 1), rutina, excepciones, especiales, eventos, omitidas)),
+    [delRol, hoy, rutina, excepciones, especiales, eventos, omitidas],
   );
   const carritosRol = carritos.filter((c) => rol.carritos.includes(c.id));
   // Alertas con fechas reales: los festivos no cuentan (ver lib/carros.ts)
   const alertas = useMemo(
-    () => alertasCarros(rutina, carritosRol, ahora, especiales.map((d) => d.fecha)),
-    [rutina, carritosRol, ahora, especiales],
+    () => alertasCarros(
+        rutina,
+        carritosRol,
+        ahora,
+        especiales.map((d) => d.fecha),
+        new Set(omitidas.map((o) => `${o.fecha}|${o.tarea_key}`)),
+      ),
+    [rutina, carritosRol, ahora, especiales, omitidas],
   );
 
   async function onHecho(t: TareaDia) {
@@ -198,6 +217,30 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     } catch (e) {
       setError((e as Error).message);
     }
+  }
+
+  async function onOmitir(fechaTarea: string, key: string) {
+    if (!sb) return;
+    try {
+      await omitirTarea(sb, fechaTarea, key);
+      await recargarPlanes();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  async function onRestaurar(t: TareaDia) {
+    if (!sb) return;
+    try {
+      await restaurarTarea(sb, fecha, t.key);
+      await recargarPlanes();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  async function onNoAplica(a: AlertaCarro) {
+    await onOmitir(a.fecha, a.tareaKey);
   }
 
   async function onDeshacer(t: TareaDia) {
@@ -229,8 +272,8 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       await moverCarrito(sb, id, ubicacion, rol.titulo);
       // Si hoy hay tareas de ese carro cuyo destino es esta ubicación, quedan hechas
       const ya = new Set(hechas.filter((h) => h.fecha === hoy).map((h) => h.tarea_key));
-      const pendientes = resolverDia(hoy, rutina, [], especiales, eventos).filter(
-        (t) => t.carrito === id && t.destino === ubicacion && !ya.has(t.key),
+      const pendientes = resolverDia(hoy, rutina, [], especiales, eventos, omitidas).filter(
+        (t) => !t.omitida && t.carrito === id && t.destino === ubicacion && !ya.has(t.key),
       );
       if (pendientes.length) {
         await Promise.all(pendientes.map((t) => marcarHecha(sb, hoy, t.key, rol.titulo)));
@@ -328,7 +371,12 @@ export default function RolView({ rol }: { rol: RolConfig }) {
           </div>
         )}
 
-        <AlertasCarros alertas={alertas} grande={rol.grande} onMover={onMover} />
+        <AlertasCarros
+          alertas={alertas}
+          grande={rol.grande}
+          onMover={onMover}
+          onNoAplica={rol.admin ? onNoAplica : undefined}
+        />
         <CarritoBadges carritos={carritosRol} grande={rol.grande} onMover={onMover} />
 
         <ul className="grid gap-3 px-4">
@@ -347,6 +395,8 @@ export default function RolView({ rol }: { rol: RolConfig }) {
                 hecha={t.tipo !== "horario" && hechasDia.has(t.key)}
                 onHecho={() => onHecho(t)}
                 onDeshacer={() => onDeshacer(t)}
+                onOmitir={rol.admin && !t.eventoId ? () => onOmitir(fecha, t.key) : undefined}
+                onRestaurar={rol.admin ? () => onRestaurar(t) : undefined}
                 onBorrar={rol.admin && t.eventoId ? () => accion(() => borrarEvento(sb, t.eventoId!)) : undefined}
               />
             ))

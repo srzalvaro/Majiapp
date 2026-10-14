@@ -7,6 +7,7 @@ import type {
   Excepcion,
   Hecha,
   Nino,
+  Omitida,
   Persona,
   TareaDia,
   TareaRutina,
@@ -109,6 +110,20 @@ export async function cargarHechas(sb: SupabaseClient, desde: string, hasta: str
   return check(await sb.from("tareas_hechas").select("fecha,tarea_key").gte("fecha", desde).lte("fecha", hasta));
 }
 
+export async function cargarOmitidas(sb: SupabaseClient, desde: string, hasta: string): Promise<Omitida[]> {
+  return check(await sb.from("tareas_omitidas").select("fecha,tarea_key").gte("fecha", desde).lte("fecha", hasta));
+}
+
+export async function omitirTarea(sb: SupabaseClient, fecha: string, tareaKey: string) {
+  check(
+    await sb.from("tareas_omitidas").upsert({ fecha, tarea_key: tareaKey }, { onConflict: "fecha,tarea_key" }).select("id"),
+  );
+}
+
+export async function restaurarTarea(sb: SupabaseClient, fecha: string, tareaKey: string) {
+  check(await sb.from("tareas_omitidas").delete().eq("fecha", fecha).eq("tarea_key", tareaKey).select("id"));
+}
+
 export async function marcarHecha(sb: SupabaseClient, fecha: string, tareaKey: string, por: string) {
   check(
     await sb
@@ -132,6 +147,7 @@ export function resolverDia(
   excepciones: Excepcion[],
   especiales: DiaEspecial[] = [],
   eventos: Evento[] = [],
+  omitidas: Omitida[] = [],
 ): TareaDia[] {
   const dia = diaSemana(fecha);
   const especial = especiales.some((d) => d.fecha === fecha);
@@ -148,7 +164,8 @@ export function resolverDia(
           return ex
             ? { ...t, key: `r:${t.id}`, responsables: ex.responsables, modificada: true, nota: ex.nota }
             : { ...t, key: `r:${t.id}`, modificada: false, nota: null };
-        });
+        })
+        .map((t) => (omitidas.some((o) => o.fecha === fecha && o.tarea_key === t.key) ? { ...t, omitida: true } : t));
 
   const deEventos: TareaDia[] = eventos
     .filter((e) => e.fecha === fecha)
