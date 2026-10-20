@@ -63,7 +63,7 @@ export function alertasCarros(
   for (const c of carritos) {
     const tareas = rutina.filter((t) => t.carrito === c.id && t.destino);
     let ultima: { min: number; hora: string; destino: Ubicacion; fecha: string; key: string } | null = null;
-    let proxima: { min: number; destino: Ubicacion } | null = null;
+    let proxima: { min: number; destino: Ubicacion; adelantable: boolean } | null = null;
 
     for (let i = DIAS_ATRAS; i >= -DIAS_ADELANTE; i--) {
       const fecha = sumarDias(ahora.fecha, -i);
@@ -79,14 +79,20 @@ export function alertasCarros(
             ultima = { min, hora: t.hora, destino: t.destino!, fecha, key: `r:${t.id}` };
           }
         } else if (!proxima || min < proxima.min) {
-          proxima = { min, destino: t.destino! };
+          proxima = { min, destino: t.destino!, adelantable: !!t.adelantable };
         }
       }
     }
 
     if (!ultima || ultima.destino === c.ubicacion_actual) continue;
-    // ya se adelantó: está en el destino siguiente y alguien lo movió después de la hora prevista
-    if (proxima && proxima.destino === c.ubicacion_actual && aMinutosMadrid(c.updated_at) > ultima.min) continue;
+    // ya se adelantó: está en el destino siguiente y (la tarea es adelantable o alguien lo movió
+    // después de la hora prevista de la última)
+    if (
+      proxima &&
+      proxima.destino === c.ubicacion_actual &&
+      (proxima.adelantable || aMinutosMadrid(c.updated_at) > ultima.min)
+    )
+      continue;
     alertas.push({
       carrito: c,
       esperado: ultima.destino,

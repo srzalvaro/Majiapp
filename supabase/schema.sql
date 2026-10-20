@@ -68,6 +68,8 @@ create table if not exists public.tareas_rutina (
 -- Dónde debe quedar el carro al hacer esta tarea (alertas si no está ahí)
 alter table public.tareas_rutina add column if not exists destino text
   check (destino in ('Casa Familia', 'Casa Abuelos', 'Casa Tía Lucía'));
+-- La tarea se puede hacer el día anterior (p. ej. los abuelos ya cogieron el carro): no da alerta antes
+alter table public.tareas_rutina add column if not exists adelantable boolean not null default false;
 create index if not exists tareas_rutina_dia_idx on public.tareas_rutina (dia_semana, hora);
 
 -- Reset del seed (la rutina es plantilla: se recarga entera)
@@ -109,7 +111,7 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   -- JUEVES
   (4, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30.', 'llevar', 'jimena', '{gloria}', null, null),
   (4, '08:45', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{alvaro}', null, null),
-  (4, '15:00', 'Coger el Carro Beige en Fundición y llevarlo a Viveros', 'Para recoger a Mateo.', 'carrito', null, '{goyo,abuela}', 'beige', 'Casa Abuelos'),
+  (4, '09:30', 'Llevar el Carro Beige a Viveros (si no está ya)', 'Gloria lo deja de camino al cole, salvo que los abuelos ya lo cogieran el día antes.', 'carrito', null, '{gloria,goyo,abuela}', 'beige', 'Casa Abuelos'),
   (4, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Verde. Luego, a la entrada de inglés.', 'recogida', 'jimena', '{gloria}', 'verde', null),
   (4, '16:00', 'Recoger a Mateo en la guardería', 'Con el Carro Beige (el de Viveros). Luego, a la entrada de inglés.', 'recogida', 'mateo', '{goyo}', 'beige', null),
   (4, '17:00', 'Llevar a Jimena y Mateo a la entrada de inglés', 'Allí los coge Álvaro y se queda con ellos durante la clase.', 'otro', null, '{gloria,goyo,alvaro}', null, null),
@@ -122,6 +124,8 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (5, '14:00', 'Recoger a Mateo (salida a las 14:00)', 'Con el Carro Verde. Comen todos en casa.', 'recogida', 'mateo', '{alvaro}', 'verde', null),
   -- DOMINGO
   (7, '10:00', 'Recoger el Carro Beige y llevarlo a tu casa', 'Durante el día, para tenerlo listo el lunes.', 'carrito', null, '{lucia}', 'beige', 'Casa Tía Lucía');
+
+update public.tareas_rutina set adelantable = true where dia_semana = 4 and carrito = 'beige' and destino = 'Casa Abuelos';
 
 -- 3. Excepciones puntuales: sustituyen a quién recoge a un niño ese día ------
 create table if not exists public.excepciones (

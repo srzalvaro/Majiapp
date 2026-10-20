@@ -25,6 +25,8 @@ export interface TareaRutina {
   responsables: Persona[];
   carrito: "beige" | "verde" | null;
   destino: Ubicacion | null;
+  /** Se puede hacer el día anterior: no genera alerta si el carro ya está en su destino. */
+  adelantable?: boolean;
 }
 
 export interface Excepcion {
