@@ -457,7 +457,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
         <Sheet titulo="¿Qué quieres cambiar?" subtitulo={etiquetaLarga(fecha)} onCerrar={() => setSheet(null)}>
           <div className="grid gap-2">
             {[
-              { id: "excepcion", txt: "🔁 Cambiar quién recoge este día" },
+              { id: "excepcion", txt: "🔁 Cambiar quién lleva o recoge este día" },
               { id: "evento", txt: "➕ Añadir un plan (fin de semana, abuelos…)" },
               { id: "festivo", txt: "🎉 Festivo / sin cole (uno o varios días)" },
               { id: "ausencia", txt: "🤒 Un peque no va (malo, vacaciones…)" },
@@ -483,7 +483,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
           excepciones={excepciones}
           onCerrar={() => setSheet(null)}
           onGuardar={(e) => accion(() => guardarExcepcion(sb, e))}
-          onRestaurar={(nino) => accion(() => borrarExcepcion(sb, fecha, nino))}
+          onRestaurar={(nino, tipo) => accion(() => borrarExcepcion(sb, fecha, nino, tipo))}
         />
       )}
 

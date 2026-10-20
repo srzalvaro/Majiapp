@@ -136,6 +136,13 @@ create table if not exists public.excepciones (
   unique (fecha, nino)
 );
 
+-- Una excepción puede ser de "recogida" o de "llevar" (misma fecha y niño, tareas distintas)
+alter table public.excepciones add column if not exists tipo text not null default 'recogida'
+  check (tipo in ('recogida', 'llevar'));
+alter table public.excepciones drop constraint if exists excepciones_fecha_nino_key;
+alter table public.excepciones drop constraint if exists excepciones_fecha_nino_tipo_key;
+alter table public.excepciones add constraint excepciones_fecha_nino_tipo_key unique (fecha, nino, tipo);
+
 -- 3b. Días especiales (festivo / sin cole): ese día NO se aplica la rutina semanal
 create table if not exists public.dias_especiales (
   id bigserial primary key,

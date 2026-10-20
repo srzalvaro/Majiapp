@@ -31,6 +31,7 @@ export interface Excepcion {
   id: number;
   fecha: string;
   nino: Nino;
+  tipo: "recogida" | "llevar";
   responsables: Persona[];
   nota: string | null;
 }

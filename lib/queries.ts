@@ -57,13 +57,20 @@ export async function moverCarrito(
 
 export async function guardarExcepcion(
   sb: SupabaseClient,
-  e: { fecha: string; nino: Nino; responsables: Persona[]; nota: string | null },
+  e: { fecha: string; nino: Nino; tipo: "recogida" | "llevar"; responsables: Persona[]; nota: string | null },
 ) {
-  check(await sb.from("excepciones").upsert(e, { onConflict: "fecha,nino" }).select("id"));
+  check(await sb.from("excepciones").upsert(e, { onConflict: "fecha,nino,tipo" }).select("id"));
 }
 
-export async function borrarExcepcion(sb: SupabaseClient, fecha: string, nino: Nino) {
-  check(await sb.from("excepciones").delete().eq("fecha", fecha).eq("nino", nino).select("id"));
+export async function borrarExcepcion(
+  sb: SupabaseClient,
+  fecha: string,
+  nino: Nino,
+  tipo: "recogida" | "llevar",
+) {
+  check(
+    await sb.from("excepciones").delete().eq("fecha", fecha).eq("nino", nino).eq("tipo", tipo).select("id"),
+  );
 }
 
 export async function cargarDiasEspeciales(
@@ -185,8 +192,8 @@ export function resolverDia(
         .filter((t) => t.dia_semana === dia)
         .map((t) => {
           const ex =
-            t.tipo === "recogida" && t.nino
-              ? excepciones.find((e) => e.fecha === fecha && e.nino === t.nino)
+            (t.tipo === "recogida" || t.tipo === "llevar") && t.nino
+              ? excepciones.find((e) => e.fecha === fecha && e.nino === t.nino && e.tipo === t.tipo)
               : undefined;
           return ex
             ? { ...t, key: `r:${t.id}`, responsables: ex.responsables, modificada: true, nota: ex.nota }
