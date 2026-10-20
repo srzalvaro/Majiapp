@@ -56,6 +56,12 @@ export interface Hecha {
   tarea_key: string;
 }
 
+export interface Ausencia {
+  fecha: string;
+  nino: Nino;
+  nota: string | null;
+}
+
 export interface Omitida {
   fecha: string;
   tarea_key: string;
@@ -67,6 +73,8 @@ export interface TareaDia extends TareaRutina {
   key: string;
   /** Omitida este día por los padres (no aplica). */
   omitida?: boolean;
+  /** La omisión viene de una ausencia del niño (no se restaura por tarea). */
+  ausente?: boolean;
   modificada: boolean;
   nota: string | null;
   /** Si viene de la tabla `eventos` (plan suelto), su id. */

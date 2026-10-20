@@ -5,18 +5,21 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import AlertasCarros from "./AlertasCarros";
 import CarritoBadges from "./CarritoBadges";
 import DiaSelector from "./DiaSelector";
+import AusenciaSheet from "./AusenciaSheet";
 import EventoSheet from "./EventoSheet";
 import ExcepcionSheet from "./ExcepcionSheet";
 import FestivoSheet from "./FestivoSheet";
 import Sheet from "./Sheet";
 import TareaCard from "./TareaCard";
 import VistaSencilla from "./VistaSencilla";
-import { ahora as ahoraFn, etiquetaLarga, hoy as hoyFn, semanaDe, sumarDias } from "@/lib/dates";
+import { ahora as ahoraFn, diaSemana, etiquetaLarga, hoy as hoyFn, semanaDe, sumarDias } from "@/lib/dates";
 import { alertasCarros, type AlertaCarro } from "@/lib/carros";
 import {
+  borrarAusencia,
   borrarDiaEspecial,
   borrarEvento,
   borrarExcepcion,
+  cargarAusencias,
   cargarCarritos,
   cargarDiasEspeciales,
   cargarEventos,
@@ -26,18 +29,20 @@ import {
   cargarOmitidas,
   crearEvento,
   desmarcarHecha,
+  guardarAusencias,
   guardarDiasEspeciales,
   guardarExcepcion,
   marcarHecha,
   moverCarrito,
   omitirTarea,
+  omitirTareas,
   restaurarTarea,
   resolverDia,
 } from "@/lib/queries";
 import { rolDeSesion } from "@/lib/auth";
 import type { RolConfig } from "@/lib/roles";
 import { getSupabase } from "@/lib/supabase";
-import type { Carrito, DiaEspecial, Evento, Excepcion, Hecha, Omitida, TareaDia, TareaRutina, Ubicacion } from "@/lib/types";
+import type { Carrito, DiaEspecial, Evento, Ausencia, Excepcion, Hecha, Omitida, TareaDia, TareaRutina, Ubicacion } from "@/lib/types";
 
 export default function RolView({ rol }: { rol: RolConfig }) {
   const sb = getSupabase();
@@ -56,7 +61,8 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [hechas, setHechas] = useState<Hecha[]>([]);
   const [omitidas, setOmitidas] = useState<Omitida[]>([]);
-  const [sheet, setSheet] = useState<null | "menu" | "excepcion" | "evento" | "festivo">(null);
+  const [ausencias, setAusencias] = useState<Ausencia[]>([]);
+  const [sheet, setSheet] = useState<null | "menu" | "excepcion" | "evento" | "festivo" | "ausencia">(null);
   const [ahora, setAhora] = useState(ahoraFn);
 
   // Reevalúa las alertas cada minuto
@@ -84,16 +90,18 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const planHasta = [hasta, adelante].sort()[1];
   const recargarPlanes = useCallback(async () => {
     if (!sb) return;
-    const [d, e, h, o] = await Promise.all([
+    const [d, e, h, o, au] = await Promise.all([
       cargarDiasEspeciales(sb, planDesde, planHasta),
       cargarEventos(sb, planDesde, planHasta),
       cargarHechas(sb, planDesde, planHasta),
       cargarOmitidas(sb, planDesde, planHasta),
+      cargarAusencias(sb, planDesde, planHasta),
     ]);
     setEspeciales(d);
     setEventos(e);
     setHechas(h);
     setOmitidas(o);
+    setAusencias(au);
   }, [sb, planDesde, planHasta]);
 
   // Sesión: sin login -> /login; un rol que no es "padres" solo ve su vista
@@ -157,6 +165,9 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "tareas_omitidas" }, () =>
         recargarPlanes().catch((e) => setError(e.message)),
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "ausencias" }, () =>
+        recargarPlanes().catch((e) => setError(e.message)),
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "tareas_rutina" }, () =>
         cargarRutina(sb).then(setRutina).catch((e) => setError(e.message)),
       )
@@ -167,10 +178,11 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   }, [sb, autenticado, rol.slug, recargarCarritos, recargarExcepciones, recargarPlanes]);
 
   const tareasDia = useMemo(
-    () => resolverDia(fecha, rutina, excepciones, especiales, eventos, omitidas),
-    [fecha, rutina, excepciones, especiales, eventos, omitidas],
+    () => resolverDia(fecha, rutina, excepciones, especiales, eventos, omitidas, ausencias),
+    [fecha, rutina, excepciones, especiales, eventos, omitidas, ausencias],
   );
   const especialDelDia = especiales.find((d) => d.fecha === fecha);
+  const ausenciasDia = ausencias.filter((a) => a.fecha === fecha);
   const hechasDia = useMemo(
     () => new Set(hechas.filter((h) => h.fecha === fecha).map((h) => h.tarea_key)),
     [hechas, fecha],
@@ -191,8 +203,8 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     return [...activas.filter((t) => !esHecha(t)), ...activas.filter(esHecha), ...mias.filter((t) => t.omitida)];
   }, [tareasDia, delRol, esHecha]);
   const tareasManana = useMemo(
-    () => delRol(resolverDia(sumarDias(hoy, 1), rutina, excepciones, especiales, eventos, omitidas)),
-    [delRol, hoy, rutina, excepciones, especiales, eventos, omitidas],
+    () => delRol(resolverDia(sumarDias(hoy, 1), rutina, excepciones, especiales, eventos, omitidas, ausencias)),
+    [delRol, hoy, rutina, excepciones, especiales, eventos, omitidas, ausencias],
   );
   const carritosRol = carritos.filter((c) => rol.carritos.includes(c.id));
   // Alertas con fechas reales: los festivos no cuentan (ver lib/carros.ts)
@@ -239,6 +251,25 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     }
   }
 
+  async function guardarAusencia(a: {
+    fechas: string[];
+    nino: "jimena" | "mateo";
+    nota: string | null;
+    carros: ("beige" | "verde")[];
+  }) {
+    await accion(async () => {
+      if (!sb) return;
+      await guardarAusencias(sb, a.fechas, a.nino, a.nota);
+      // Traslados de los carros elegidos: no hacen falta esos días
+      const filas = a.fechas.flatMap((f) =>
+        rutina
+          .filter((t) => t.dia_semana === diaSemana(f) && t.tipo === "carrito" && t.carrito && a.carros.includes(t.carrito))
+          .map((t) => ({ fecha: f, tarea_key: `r:${t.id}` })),
+      );
+      await omitirTareas(sb, filas);
+    });
+  }
+
   async function onNoAplica(a: AlertaCarro) {
     await onOmitir(a.fecha, a.tareaKey);
   }
@@ -272,7 +303,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       await moverCarrito(sb, id, ubicacion, rol.titulo);
       // Si hoy hay tareas de ese carro cuyo destino es esta ubicación, quedan hechas
       const ya = new Set(hechas.filter((h) => h.fecha === hoy).map((h) => h.tarea_key));
-      const pendientes = resolverDia(hoy, rutina, [], especiales, eventos, omitidas).filter(
+      const pendientes = resolverDia(hoy, rutina, [], especiales, eventos, omitidas, ausencias).filter(
         (t) => !t.omitida && t.carrito === id && t.destino === ubicacion && !ya.has(t.key),
       );
       if (pendientes.length) {
@@ -298,6 +329,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
         error={error}
         cargando={cargando}
         especialDelDia={especialDelDia}
+        ausenciasDia={ausenciasDia}
         alertas={alertas}
         carritos={carritosRol}
         pendientes={visibles.filter((t) => !esHecha(t))}
@@ -371,6 +403,14 @@ export default function RolView({ rol }: { rol: RolConfig }) {
           </div>
         )}
 
+        {ausenciasDia.map((a) => (
+          <div key={a.nino} className="mx-4 rounded-2xl bg-sky-50 p-3 ring-2 ring-sky-200">
+            <p className="font-semibold text-sky-900">
+              🤒 {a.nino === "mateo" ? "Mateo" : "Jimena"} no va este día{a.nota ? ` · ${a.nota}` : ""}
+            </p>
+          </div>
+        ))}
+
         <AlertasCarros
           alertas={alertas}
           grande={rol.grande}
@@ -420,10 +460,11 @@ export default function RolView({ rol }: { rol: RolConfig }) {
               { id: "excepcion", txt: "🔁 Cambiar quién recoge este día" },
               { id: "evento", txt: "➕ Añadir un plan (fin de semana, abuelos…)" },
               { id: "festivo", txt: "🎉 Festivo / sin cole (uno o varios días)" },
+              { id: "ausencia", txt: "🤒 Un peque no va (malo, vacaciones…)" },
             ].map((o) => (
               <button
                 key={o.id}
-                onClick={() => setSheet(o.id as "excepcion" | "evento" | "festivo")}
+                onClick={() => setSheet(o.id as "excepcion" | "evento" | "festivo" | "ausencia")}
                 className="h-14 rounded-xl bg-stone-100 px-4 text-left font-medium active:bg-stone-200"
               >
                 {o.txt}
@@ -451,6 +492,16 @@ export default function RolView({ rol }: { rol: RolConfig }) {
           fechaInicial={fecha}
           onCerrar={() => setSheet(null)}
           onGuardar={(e) => accion(() => crearEvento(sb, e))}
+        />
+      )}
+
+      {sheet === "ausencia" && (
+        <AusenciaSheet
+          fechaInicial={fecha}
+          ausenciasDia={ausenciasDia}
+          onCerrar={() => setSheet(null)}
+          onGuardar={guardarAusencia}
+          onQuitar={(nino) => accion(() => borrarAusencia(sb, fecha, nino))}
         />
       )}
 

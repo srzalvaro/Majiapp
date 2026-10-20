@@ -43,8 +43,10 @@ export default function TareaCard({
           </p>
           {t.omitida ? (
             <div className="mt-2 flex items-center gap-3">
-              <span className="text-sm font-semibold text-stone-600">⛔ Omitida este día</span>
-              {onRestaurar && (
+              <span className="text-sm font-semibold text-stone-600">
+                {t.ausente ? `🤒 ${t.nino === "mateo" ? "Mateo" : "Jimena"} no va este día` : "⛔ Omitida este día"}
+              </span>
+              {onRestaurar && !t.ausente && (
                 <button onClick={onRestaurar} className="h-9 rounded-lg px-3 text-sm text-stone-600 ring-1 ring-stone-300">
                   Restaurar
                 </button>

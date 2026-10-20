@@ -8,7 +8,7 @@ import TareaCard from "./TareaCard";
 import type { AlertaCarro } from "@/lib/carros";
 import { etiquetaLarga, sumarDias } from "@/lib/dates";
 import type { RolConfig } from "@/lib/roles";
-import type { Carrito, DiaEspecial, TareaDia, Ubicacion } from "@/lib/types";
+import type { Ausencia, Carrito, DiaEspecial, TareaDia, Ubicacion } from "@/lib/types";
 
 /**
  * Vista para abuelos y Lucía: una tarjeta grande con "lo siguiente", un solo botón,
@@ -22,6 +22,7 @@ export default function VistaSencilla({
   error,
   cargando,
   especialDelDia,
+  ausenciasDia,
   alertas,
   carritos,
   pendientes,
@@ -39,6 +40,7 @@ export default function VistaSencilla({
   error: string | null;
   cargando: boolean;
   especialDelDia?: DiaEspecial;
+  ausenciasDia: Ausencia[];
   alertas: AlertaCarro[];
   carritos: Carrito[];
   pendientes: TareaDia[];
@@ -115,6 +117,15 @@ export default function VistaSencilla({
             <p className="text-lg text-amber-900">{especialDelDia.nota ?? "No hay rutina de cole."}</p>
           </div>
         )}
+
+        {ausenciasDia.map((a) => (
+          <div key={a.nino} className="mx-4 rounded-2xl bg-sky-50 p-4 ring-2 ring-sky-200">
+            <p className="text-xl font-bold text-sky-900">
+              🤒 {a.nino === "mateo" ? "Mateo" : "Jimena"} no va este día
+            </p>
+            {a.nota && <p className="text-lg text-sky-900">{a.nota}</p>}
+          </div>
+        ))}
 
         <AlertasCarros alertas={alertas} grande onMover={onMover} />
 

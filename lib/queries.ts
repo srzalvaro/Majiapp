@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { diaSemana } from "./dates";
 import type {
+  Ausencia,
   Carrito,
   DiaEspecial,
   Evento,
@@ -114,6 +115,31 @@ export async function cargarOmitidas(sb: SupabaseClient, desde: string, hasta: s
   return check(await sb.from("tareas_omitidas").select("fecha,tarea_key").gte("fecha", desde).lte("fecha", hasta));
 }
 
+export async function cargarAusencias(sb: SupabaseClient, desde: string, hasta: string): Promise<Ausencia[]> {
+  return check(await sb.from("ausencias").select("fecha,nino,nota").gte("fecha", desde).lte("fecha", hasta));
+}
+
+export async function guardarAusencias(sb: SupabaseClient, fechas: string[], nino: Nino, nota: string | null) {
+  check(
+    await sb
+      .from("ausencias")
+      .upsert(
+        fechas.map((fecha) => ({ fecha, nino, nota })),
+        { onConflict: "fecha,nino" },
+      )
+      .select("id"),
+  );
+}
+
+export async function borrarAusencia(sb: SupabaseClient, fecha: string, nino: Nino) {
+  check(await sb.from("ausencias").delete().eq("fecha", fecha).eq("nino", nino).select("id"));
+}
+
+export async function omitirTareas(sb: SupabaseClient, filas: { fecha: string; tarea_key: string }[]) {
+  if (filas.length === 0) return;
+  check(await sb.from("tareas_omitidas").upsert(filas, { onConflict: "fecha,tarea_key" }).select("id"));
+}
+
 export async function omitirTarea(sb: SupabaseClient, fecha: string, tareaKey: string) {
   check(
     await sb.from("tareas_omitidas").upsert({ fecha, tarea_key: tareaKey }, { onConflict: "fecha,tarea_key" }).select("id"),
@@ -148,6 +174,7 @@ export function resolverDia(
   especiales: DiaEspecial[] = [],
   eventos: Evento[] = [],
   omitidas: Omitida[] = [],
+  ausencias: Ausencia[] = [],
 ): TareaDia[] {
   const dia = diaSemana(fecha);
   const especial = especiales.some((d) => d.fecha === fecha);
@@ -165,7 +192,13 @@ export function resolverDia(
             ? { ...t, key: `r:${t.id}`, responsables: ex.responsables, modificada: true, nota: ex.nota }
             : { ...t, key: `r:${t.id}`, modificada: false, nota: null };
         })
-        .map((t) => (omitidas.some((o) => o.fecha === fecha && o.tarea_key === t.key) ? { ...t, omitida: true } : t));
+        .map((t) => (omitidas.some((o) => o.fecha === fecha && o.tarea_key === t.key) ? { ...t, omitida: true } : t))
+        // un niño ausente ese día: sus tareas (llevar / recoger) no aplican
+        .map((t) =>
+          t.nino && ausencias.some((a) => a.fecha === fecha && a.nino === t.nino)
+            ? { ...t, omitida: true, ausente: true }
+            : t,
+        );
 
   const deEventos: TareaDia[] = eventos
     .filter((e) => e.fecha === fecha)

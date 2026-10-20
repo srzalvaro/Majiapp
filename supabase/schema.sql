@@ -176,6 +176,16 @@ create table if not exists public.tareas_omitidas (
   unique (fecha, tarea_key)
 );
 
+-- 3f. Ausencias: un peque no va al cole/guardería esos días (malo, vacaciones…)
+create table if not exists public.ausencias (
+  id bigserial primary key,
+  fecha date not null,
+  nino text not null check (nino in ('jimena', 'mateo')),
+  nota text,
+  created_at timestamptz not null default now(),
+  unique (fecha, nino)
+);
+
 -- 4. Seguridad ---------------------------------------------------------------
 -- Login por rol (Supabase Auth). El rol vive en app_metadata.rol del usuario
 -- ('abuelos' | 'lucia' | 'padres'); app_metadata solo lo puede cambiar el servidor,
@@ -188,6 +198,7 @@ alter table public.dias_especiales enable row level security;
 alter table public.eventos enable row level security;
 alter table public.tareas_hechas enable row level security;
 alter table public.tareas_omitidas enable row level security;
+alter table public.ausencias enable row level security;
 
 create or replace function public.rol_actual() returns text
 language sql stable as $$ select auth.jwt() -> 'app_metadata' ->> 'rol' $$;
@@ -206,6 +217,8 @@ drop policy if exists eventos_write on public.eventos;
 drop policy if exists hechas_all on public.tareas_hechas;
 drop policy if exists omitidas_read on public.tareas_omitidas;
 drop policy if exists omitidas_write on public.tareas_omitidas;
+drop policy if exists ausencias_read on public.ausencias;
+drop policy if exists ausencias_write on public.ausencias;
 
 create policy carritos_read on public.carritos for select to authenticated using (public.rol_actual() is not null);
 create policy carritos_move on public.carritos for update to authenticated
@@ -233,6 +246,10 @@ create policy omitidas_read on public.tareas_omitidas for select to authenticate
 create policy omitidas_write on public.tareas_omitidas for all to authenticated
   using (public.rol_actual() = 'padres') with check (public.rol_actual() = 'padres');
 
+create policy ausencias_read on public.ausencias for select to authenticated using (public.rol_actual() is not null);
+create policy ausencias_write on public.ausencias for all to authenticated
+  using (public.rol_actual() = 'padres') with check (public.rol_actual() = 'padres');
+
 -- 5. Tiempo real -------------------------------------------------------------
 do $$ begin
   begin alter publication supabase_realtime add table public.carritos; exception when duplicate_object then null; end;
@@ -241,5 +258,6 @@ do $$ begin
   begin alter publication supabase_realtime add table public.eventos; exception when duplicate_object then null; end;
   begin alter publication supabase_realtime add table public.tareas_hechas; exception when duplicate_object then null; end;
   begin alter publication supabase_realtime add table public.tareas_omitidas; exception when duplicate_object then null; end;
+  begin alter publication supabase_realtime add table public.ausencias; exception when duplicate_object then null; end;
   begin alter publication supabase_realtime add table public.tareas_rutina; exception when duplicate_object then null; end;
 end $$;
