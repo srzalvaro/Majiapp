@@ -84,7 +84,9 @@ export default function TareaCard({
           )}
           {t.modificada && (
             <p className={`mt-2 font-medium text-amber-700 ${grande ? "text-base" : "text-sm"}`}>
-              ⚠️ Cambio de planes{t.nota ? `: ${t.nota}` : ""}
+              ⚠️ Cambio de planes
+              {t.horaRutina ? ` · ahora a las ${t.hora} (antes ${t.horaRutina})` : ""}
+              {t.nota ? ` · ${t.nota}` : ""}
             </p>
           )}
         </div>

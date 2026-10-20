@@ -62,15 +62,45 @@ export async function guardarExcepcion(
   check(await sb.from("excepciones").upsert(e, { onConflict: "fecha,nino,tipo" }).select("id"));
 }
 
+/** Quita el cambio de "quién"; si ese día también hay cambio de hora, este se conserva. */
 export async function borrarExcepcion(
   sb: SupabaseClient,
   fecha: string,
   nino: Nino,
   tipo: "recogida" | "llevar",
 ) {
-  check(
-    await sb.from("excepciones").delete().eq("fecha", fecha).eq("nino", nino).eq("tipo", tipo).select("id"),
-  );
+  const fila = check(
+    await sb.from("excepciones").select("id,hora").eq("fecha", fecha).eq("nino", nino).eq("tipo", tipo).maybeSingle(),
+  ) as { id: number; hora: string | null } | null;
+  if (!fila) return;
+  if (fila.hora) check(await sb.from("excepciones").update({ responsables: null, nota: null }).eq("id", fila.id).select("id"));
+  else check(await sb.from("excepciones").delete().eq("id", fila.id).select("id"));
+}
+
+/** Cambia la hora de las recogidas indicadas (no toca quién recoge). */
+export async function guardarHorasSalida(
+  sb: SupabaseClient,
+  filas: { fecha: string; nino: Nino; hora: string; nota: string | null }[],
+) {
+  if (filas.length === 0) return;
+  const rows = filas.map(({ fecha, nino, hora, nota }) => ({
+    fecha,
+    nino,
+    tipo: "recogida" as const,
+    hora,
+    ...(nota ? { nota } : {}),
+  }));
+  check(await sb.from("excepciones").upsert(rows, { onConflict: "fecha,nino,tipo" }).select("id"));
+}
+
+/** Quita el cambio de hora; si no queda ningún otro cambio, borra la fila. */
+export async function quitarHoraSalida(sb: SupabaseClient, fecha: string, nino: Nino) {
+  const fila = check(
+    await sb.from("excepciones").select("id,responsables").eq("fecha", fecha).eq("nino", nino).eq("tipo", "recogida").maybeSingle(),
+  ) as { id: number; responsables: string[] | null } | null;
+  if (!fila) return;
+  if (fila.responsables) check(await sb.from("excepciones").update({ hora: null }).eq("id", fila.id).select("id"));
+  else check(await sb.from("excepciones").delete().eq("id", fila.id).select("id"));
 }
 
 export async function cargarDiasEspeciales(
@@ -195,8 +225,16 @@ export function resolverDia(
             (t.tipo === "recogida" || t.tipo === "llevar") && t.nino
               ? excepciones.find((e) => e.fecha === fecha && e.nino === t.nino && e.tipo === t.tipo)
               : undefined;
-          return ex
-            ? { ...t, key: `r:${t.id}`, responsables: ex.responsables, modificada: true, nota: ex.nota }
+          return ex && (ex.responsables || ex.hora)
+            ? {
+                ...t,
+                key: `r:${t.id}`,
+                hora: ex.hora ?? t.hora,
+                horaRutina: ex.hora && ex.hora !== t.hora ? t.hora : undefined,
+                responsables: ex.responsables ?? t.responsables,
+                modificada: true,
+                nota: ex.nota,
+              }
             : { ...t, key: `r:${t.id}`, modificada: false, nota: null };
         })
         .map((t) => (omitidas.some((o) => o.fecha === fecha && o.tarea_key === t.key) ? { ...t, omitida: true } : t))

@@ -9,6 +9,7 @@ import AusenciaSheet from "./AusenciaSheet";
 import EventoSheet from "./EventoSheet";
 import ExcepcionSheet from "./ExcepcionSheet";
 import FestivoSheet from "./FestivoSheet";
+import HoraSalidaSheet from "./HoraSalidaSheet";
 import Sheet from "./Sheet";
 import TareaCard from "./TareaCard";
 import VistaSencilla from "./VistaSencilla";
@@ -32,10 +33,12 @@ import {
   guardarAusencias,
   guardarDiasEspeciales,
   guardarExcepcion,
+  guardarHorasSalida,
   marcarHecha,
   moverCarrito,
   omitirTarea,
   omitirTareas,
+  quitarHoraSalida,
   restaurarTarea,
   resolverDia,
 } from "@/lib/queries";
@@ -62,7 +65,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const [hechas, setHechas] = useState<Hecha[]>([]);
   const [omitidas, setOmitidas] = useState<Omitida[]>([]);
   const [ausencias, setAusencias] = useState<Ausencia[]>([]);
-  const [sheet, setSheet] = useState<null | "menu" | "excepcion" | "evento" | "festivo" | "ausencia">(null);
+  const [sheet, setSheet] = useState<null | "menu" | "excepcion" | "evento" | "festivo" | "ausencia" | "hora">(null);
   const [ahora, setAhora] = useState(ahoraFn);
 
   // Reevalúa las alertas cada minuto
@@ -460,11 +463,12 @@ export default function RolView({ rol }: { rol: RolConfig }) {
               { id: "excepcion", txt: "🔁 Cambiar quién lleva o recoge este día" },
               { id: "evento", txt: "➕ Añadir un plan (fin de semana, abuelos…)" },
               { id: "festivo", txt: "🎉 Festivo / sin cole (uno o varios días)" },
+              { id: "hora", txt: "🕑 Cambiar hora de salida (comedor…)" },
               { id: "ausencia", txt: "🤒 Un peque no va (malo, vacaciones…)" },
             ].map((o) => (
               <button
                 key={o.id}
-                onClick={() => setSheet(o.id as "excepcion" | "evento" | "festivo" | "ausencia")}
+                onClick={() => setSheet(o.id as "excepcion" | "evento" | "festivo" | "ausencia" | "hora")}
                 className="h-14 rounded-xl bg-stone-100 px-4 text-left font-medium active:bg-stone-200"
               >
                 {o.txt}
@@ -492,6 +496,17 @@ export default function RolView({ rol }: { rol: RolConfig }) {
           fechaInicial={fecha}
           onCerrar={() => setSheet(null)}
           onGuardar={(e) => accion(() => crearEvento(sb, e))}
+        />
+      )}
+
+      {sheet === "hora" && (
+        <HoraSalidaSheet
+          fechaInicial={fecha}
+          rutina={rutina}
+          cambiosDia={excepciones.filter((e) => e.fecha === fecha && e.tipo === "recogida" && e.hora)}
+          onCerrar={() => setSheet(null)}
+          onGuardar={(filas) => accion(() => guardarHorasSalida(sb, filas))}
+          onQuitar={(nino) => accion(() => quitarHoraSalida(sb, fecha, nino))}
         />
       )}
 

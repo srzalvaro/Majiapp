@@ -32,7 +32,10 @@ export interface Excepcion {
   fecha: string;
   nino: Nino;
   tipo: "recogida" | "llevar";
-  responsables: Persona[];
+  /** null = quién lo hace no cambia (solo la hora). */
+  responsables: Persona[] | null;
+  /** Hora distinta de la de la rutina ese día (p. ej. salida a las 14:00). */
+  hora: string | null;
   nota: string | null;
 }
 
@@ -70,6 +73,8 @@ export interface Omitida {
 
 /** Tarea ya resuelta para una fecha concreta (rutina + excepción aplicada). */
 export interface TareaDia extends TareaRutina {
+  /** Hora original de la rutina, si ese día se ha cambiado. */
+  horaRutina?: string;
   /** Clave única de la tarea en un día: 'r:<id>' rutina · 'e:<id>' plan suelto. */
   key: string;
   /** Omitida este día por los padres (no aplica). */

@@ -110,13 +110,11 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (4, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30.', 'llevar', 'jimena', '{gloria}', null, null),
   (4, '08:45', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{alvaro}', null, null),
   (4, '15:00', 'Coger el Carro Beige en Fundición y llevarlo a Viveros', 'Para recoger a Mateo.', 'carrito', null, '{goyo,abuela}', 'beige', 'Casa Abuelos'),
-  (4, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Verde. Tarde con los padres.', 'recogida', 'jimena', '{gloria}', 'verde', null),
-  (4, '16:00', 'Recoger a Mateo en la guardería', 'Con el Carro Beige (el de Viveros).', 'recogida', 'mateo', '{goyo}', 'beige', null),
-  (4, '17:00', 'Llevar a Jimena y Mateo a inglés', 'Se queda con ellos durante la clase.', 'otro', null, '{alvaro}', null, null),
-  (4, '17:00', 'Gimnasio (17:00–18:00)', null, 'horario', null, '{gloria}', null, null),
-  (4, '17:00', 'Libre desde las 17:00', null, 'horario', null, '{goyo}', null, null),
-  (4, '20:00', 'Los dos carros vuelven a Fundición (Casa Familia)', 'A final del día. Trae el Beige de Viveros.', 'carrito', null, '{goyo,abuela}', 'beige', 'Casa Familia'),
-  (4, '20:00', 'Carro Verde en Fundición (Casa Familia)', null, 'carrito', null, '{gloria}', 'verde', 'Casa Familia'),
+  (4, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Verde. Luego, a la entrada de inglés.', 'recogida', 'jimena', '{gloria}', 'verde', null),
+  (4, '16:00', 'Recoger a Mateo en la guardería', 'Con el Carro Beige (el de Viveros). Luego, a la entrada de inglés.', 'recogida', 'mateo', '{goyo}', 'beige', null),
+  (4, '17:00', 'Llevar a Jimena y Mateo a la entrada de inglés', 'Allí los coge Álvaro y se queda con ellos durante la clase.', 'otro', null, '{gloria,goyo,alvaro}', null, null),
+  (4, '20:00', 'Llevar el Carro Beige a Fundición (Casa Familia)', 'A final del día, desde la entrada de inglés.', 'carrito', null, '{alvaro}', 'beige', 'Casa Familia'),
+  (4, '20:00', 'Llevar el Carro Verde a Fundición (Casa Familia)', 'A final del día, desde la entrada de inglés.', 'carrito', null, '{alvaro}', 'verde', 'Casa Familia'),
   -- VIERNES
   (5, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30.', 'llevar', 'jimena', '{alvaro}', null, null),
   (5, '08:15', 'Llevar a Mateo a la guardería con el Carro Beige', 'Después te llevas el carro al cole.', 'llevar', 'mateo', '{gloria}', 'beige', null),
@@ -142,6 +140,11 @@ alter table public.excepciones add column if not exists tipo text not null defau
 alter table public.excepciones drop constraint if exists excepciones_fecha_nino_key;
 alter table public.excepciones drop constraint if exists excepciones_fecha_nino_tipo_key;
 alter table public.excepciones add constraint excepciones_fecha_nino_tipo_key unique (fecha, nino, tipo);
+
+-- Excepción de HORA (p. ej. salida del comedor a las 14:00): responsables pasa a ser opcional
+alter table public.excepciones add column if not exists hora text
+  check (hora ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
+alter table public.excepciones alter column responsables drop not null;
 
 -- 3b. Días especiales (festivo / sin cole): ese día NO se aplica la rutina semanal
 create table if not exists public.dias_especiales (
