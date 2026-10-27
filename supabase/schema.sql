@@ -80,9 +80,9 @@ truncate public.tareas_rutina restart identity;
 -- Las que llevan carrito pero no destino son solo informativas.
 insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino, responsables, carrito, destino) values
   -- LUNES · el Beige llega de casa de Lucía (domingo)
-  (1, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30. Al volver te llevas el Carro Verde a Viveros.', 'llevar', 'jimena', '{abuela}', null, null),
+  (1, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30.', 'llevar', 'jimena', '{abuela}', null, null),
   (1, '08:45', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{alvaro}', null, null),
-  (1, '09:30', 'Llevar el Carro Verde a Viveros (casa de los abuelos)', 'Desde Fundición.', 'carrito', null, '{abuela}', 'verde', 'Casa Abuelos'),
+  (1, '09:30', 'Dejar el Carro Verde en Viveros (al volver del cole)', 'Lo coges en Fundición al dejar a Jimena.', 'carrito', null, '{abuela}', 'verde', 'Casa Abuelos'),
   (1, '15:00', 'Gloria viene a comer a vuestra casa', 'Sale del cole a las 15:00 y come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null, null),
   (1, '15:30', 'Gloria se lleva el Carro Verde después de comer', 'Para recoger a Mateo.', 'carrito', null, '{gloria,goyo,abuela}', 'verde', null),
   (1, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Beige (que Lucía tiene desde el domingo).', 'recogida', 'jimena', '{lucia}', 'beige', null),
@@ -99,9 +99,9 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (2, '19:00', 'Devolver el Carro Beige a Fundición (Casa Familia)', 'Por la noche, al traer a los peques.', 'carrito', null, '{goyo,abuela}', 'beige', 'Casa Familia'),
   (2, '19:00', 'Llevaros el Carro Verde a Viveros', 'Se queda en vuestra casa esta noche.', 'carrito', null, '{goyo,abuela}', 'verde', 'Casa Abuelos'),
   -- MIÉRCOLES
-  (3, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30. Al volver te llevas el Carro Beige a Viveros.', 'llevar', 'jimena', '{abuela}', null, null),
+  (3, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30.', 'llevar', 'jimena', '{abuela}', null, null),
   (3, '08:45', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{alvaro}', null, null),
-  (3, '09:30', 'Llevar el Carro Beige de Fundición a Viveros', 'Al volver del cole. El Verde ya está en vuestra casa.', 'carrito', null, '{abuela}', 'beige', 'Casa Abuelos'),
+  (3, '09:30', 'Dejar el Carro Beige en Viveros (al volver del cole)', 'Lo coges en Fundición al dejar a Jimena. El Verde ya está en vuestra casa.', 'carrito', null, '{abuela}', 'beige', 'Casa Abuelos'),
   (3, '15:00', 'Gloria viene a comer a vuestra casa', 'Sale del cole a las 15:00 y come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null, null),
   (3, '15:30', 'Gloria coge el Carro Beige en Viveros', 'Para recoger a Jimena.', 'carrito', null, '{gloria,goyo,abuela}', 'beige', null),
   (3, '16:00', 'Recoger a Jimena en el cole', 'Con el Carro Beige. Tarde con los padres.', 'recogida', 'jimena', '{gloria}', 'beige', null),
