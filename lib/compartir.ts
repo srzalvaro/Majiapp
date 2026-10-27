@@ -1,7 +1,7 @@
 import { etiquetaLarga } from "./dates";
 import type { Ausencia, Carrito, DiaEspecial, TareaDia } from "./types";
 
-const ICONO = { recogida: "🎒", llevar: "🚶", horario: "💼", carrito: "🚼", otro: "📌" } as const;
+const ICONO = { recogida: "🎒", llevar: "🚶", horario: "🍽️", carrito: "🚼", otro: "📌" } as const;
 const CARRO = { beige: "🟤", verde: "🟢" } as const;
 const NINO = { mateo: "Mateo", jimena: "Jimena" } as const;
 

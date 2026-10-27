@@ -2,7 +2,7 @@ import { PERSONAS } from "@/lib/roles";
 import CarroIcon from "./CarroIcon";
 import type { TareaDia } from "@/lib/types";
 
-const ICONO = { recogida: "🎒", llevar: "🚶", horario: "💼", carrito: "🚼", otro: "📌" } as const;
+const ICONO = { recogida: "🎒", llevar: "🚶", horario: "🍽️", carrito: "🚼", otro: "📌" } as const;
 
 export default function TareaCard({
   t,
