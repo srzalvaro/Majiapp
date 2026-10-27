@@ -1,7 +1,7 @@
 import { etiquetaLarga } from "./dates";
 import type { Ausencia, Carrito, DiaEspecial, TareaDia } from "./types";
 
-const ICONO = { recogida: "🎒", llevar: "🚶", horario: "💼", carrito: "🚼", otro: "📌" } as const;
+const ICONO = { recogida: "🎒", llevar: "🚶", horario: "💼", carrito: "🚗", otro: "📌" } as const;
 const CARRO = { beige: "🟤", verde: "🟢" } as const;
 const NINO = { mateo: "Mateo", jimena: "Jimena" } as const;
 
@@ -22,7 +22,7 @@ function bloque(titulo: string, d: DiaMensaje): string {
     lineas.push("Nada que hacer 🎉");
   } else {
     for (const t of d.tareas) {
-      lineas.push(`${ICONO[t.tipo]} *${t.hora}* ${t.titulo}`);
+      lineas.push(`${ICONO[t.tipo]}${t.tipo === "carrito" && t.carrito ? CARRO[t.carrito] : ""} *${t.hora}* ${t.titulo}`);
       if (t.detalle) lineas.push(`      _${t.detalle}_`);
       if (t.modificada) {
         const cambios = [t.horaRutina ? `ahora a las ${t.hora} (antes ${t.horaRutina})` : "", t.nota ?? ""].filter(Boolean);
@@ -48,7 +48,7 @@ export function mensajeAgenda(o: {
   ];
   if (o.carritos.length > 0) {
     partes.push(
-      ["🚼 *Carros ahora*", ...o.carritos.map((c) => `${CARRO[c.id]} ${c.nombre.replace("Carro ", "")} → ${c.ubicacion_actual}`)].join(
+      ["🚗 *Carros ahora*", ...o.carritos.map((c) => `${CARRO[c.id]} ${c.nombre.replace("Carro ", "")} → ${c.ubicacion_actual}`)].join(
         "\n",
       ),
     );
