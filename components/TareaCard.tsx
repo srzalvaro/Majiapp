@@ -1,7 +1,8 @@
 import { PERSONAS } from "@/lib/roles";
+import CarroIcon from "./CarroIcon";
 import type { TareaDia } from "@/lib/types";
 
-const ICONO = { recogida: "🎒", llevar: "🚶", horario: "💼", carrito: "🚗", otro: "📌" } as const;
+const ICONO = { recogida: "🎒", llevar: "🚶", horario: "💼", carrito: "🚼", otro: "📌" } as const;
 
 export default function TareaCard({
   t,
@@ -30,13 +31,8 @@ export default function TareaCard({
       } ${grande ? "p-5" : "p-3"}`}
     >
       <div className="flex gap-3">
-        <div className={`relative ${grande ? "text-3xl" : "text-2xl"}`}>
-          {ICONO[t.tipo]}
-          {t.tipo === "carrito" && t.carrito && (
-            <span
-              className={`absolute -bottom-0.5 -right-1.5 h-3.5 w-3.5 rounded-full border-2 border-white ${t.carrito === "verde" ? "bg-green-600" : "bg-amber-700"}`}
-            />
-          )}
+        <div className={grande ? "text-3xl" : "text-2xl"}>
+          {t.tipo === "carrito" ? <CarroIcon carro={t.carrito} className={grande ? "h-9 w-9" : "h-7 w-7"} /> : ICONO[t.tipo]}
         </div>
         <div className="min-w-0 flex-1">
           <p className={`font-bold ${grande ? "text-2xl" : "text-base"} ${hecha || t.omitida ? "line-through" : ""}`}>
