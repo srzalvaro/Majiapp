@@ -55,7 +55,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const [autenticado, setAutenticado] = useState(false);
   const hoy = useMemo(hoyFn, []);
   const [fecha, setFecha] = useState(() =>
-    rol.grande && ahoraFn().hora >= "20:00" ? sumarDias(hoyFn(), 1) : hoyFn(),
+    rol.grande && ahoraFn().hora >= "19:00" ? sumarDias(hoyFn(), 1) : hoyFn(),
   );
   const [rutina, setRutina] = useState<TareaRutina[]>([]);
   const [carritos, setCarritos] = useState<Carrito[]>([]);
