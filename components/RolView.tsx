@@ -6,6 +6,7 @@ import AlertasCarros from "./AlertasCarros";
 import CarritoBadges from "./CarritoBadges";
 import DiaSelector from "./DiaSelector";
 import AusenciaSheet from "./AusenciaSheet";
+import CompartirSheet from "./CompartirSheet";
 import EventoSheet from "./EventoSheet";
 import ExcepcionSheet from "./ExcepcionSheet";
 import FestivoSheet from "./FestivoSheet";
@@ -15,6 +16,7 @@ import TareaCard from "./TareaCard";
 import VistaSencilla from "./VistaSencilla";
 import { ahora as ahoraFn, diaSemana, etiquetaLarga, hoy as hoyFn, semanaDe, sumarDias } from "@/lib/dates";
 import { alertasCarros, type AlertaCarro } from "@/lib/carros";
+import { mensajeAgenda } from "@/lib/compartir";
 import {
   borrarAusencia,
   borrarDiaEspecial,
@@ -43,7 +45,7 @@ import {
   resolverDia,
 } from "@/lib/queries";
 import { rolDeSesion } from "@/lib/auth";
-import type { RolConfig } from "@/lib/roles";
+import { ROLES, type RolConfig } from "@/lib/roles";
 import { getSupabase } from "@/lib/supabase";
 import type { Carrito, DiaEspecial, Evento, Ausencia, Excepcion, Hecha, Omitida, TareaDia, TareaRutina, Ubicacion } from "@/lib/types";
 
@@ -65,7 +67,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   const [hechas, setHechas] = useState<Hecha[]>([]);
   const [omitidas, setOmitidas] = useState<Omitida[]>([]);
   const [ausencias, setAusencias] = useState<Ausencia[]>([]);
-  const [sheet, setSheet] = useState<null | "menu" | "excepcion" | "evento" | "festivo" | "ausencia" | "hora">(null);
+  const [sheet, setSheet] = useState<null | "menu" | "excepcion" | "evento" | "festivo" | "ausencia" | "hora" | "compartir">(null);
   const [ahora, setAhora] = useState(ahoraFn);
 
   // Reevalúa las alertas cada minuto
@@ -83,7 +85,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
   }, [sb]);
 
   const recargarExcepciones = useCallback(async () => {
-    if (sb) setExcepciones(await cargarExcepciones(sb, desde, [hasta, sumarDias(hoy, 1)].sort()[1]));
+    if (sb) setExcepciones(await cargarExcepciones(sb, [desde, hoy].sort()[0], [hasta, sumarDias(hoy, 1)].sort()[1]));
   }, [sb, desde, hasta, hoy]);
 
   // Festivos y planes: semana visible + semana actual (para silenciar alertas en festivo)
@@ -287,6 +289,31 @@ export default function RolView({ rol }: { rol: RolConfig }) {
     }
   }
 
+  /** Mensaje de WhatsApp con el plan de hoy y mañana de un destinatario (abuelos, lucia…). */
+  function construirMensaje(slug: string): string {
+    const r = ROLES[slug];
+    const manana = sumarDias(hoy, 1);
+    const hechasHoy = new Set(hechas.filter((h) => h.fecha === hoy).map((h) => h.tarea_key));
+    const dia = (f: string, sinHechas: boolean) => ({
+      fecha: f,
+      tareas: resolverDia(f, rutina, excepciones, especiales, eventos, omitidas, ausencias).filter(
+        (t) =>
+          !t.omitida &&
+          t.responsables.some((p) => r.personas.includes(p)) &&
+          !(sinHechas && t.tipo !== "horario" && hechasHoy.has(t.key)),
+      ),
+      especial: especiales.find((d) => d.fecha === f),
+      ausencias: ausencias.filter((a) => a.fecha === f),
+    });
+    return mensajeAgenda({
+      saludo: r.saludo,
+      hoy: dia(hoy, true),
+      manana: dia(manana, false),
+      carritos: carritos.filter((c) => r.carritos.includes(c.id)),
+      enlace: `${window.location.origin}/${r.slug}`,
+    });
+  }
+
   /** Ejecuta una escritura, refresca datos y cierra la hoja; los errores se muestran arriba. */
   async function accion(fn: () => Promise<unknown>) {
     try {
@@ -385,6 +412,16 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       </header>
 
       <main className="mt-3 grid gap-3">
+        {rol.admin && (
+          <div className="px-4">
+            <button
+              onClick={() => setSheet("compartir")}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] font-semibold text-stone-900 active:scale-95"
+            >
+              📲 Compartir agenda
+            </button>
+          </div>
+        )}
         <p className={`px-4 font-semibold capitalize text-stone-700 ${rol.grande ? "text-lg" : ""}`}>
           {etiquetaLarga(fecha)}
         </p>
@@ -496,6 +533,17 @@ export default function RolView({ rol }: { rol: RolConfig }) {
           fechaInicial={fecha}
           onCerrar={() => setSheet(null)}
           onGuardar={(e) => accion(() => crearEvento(sb, e))}
+        />
+      )}
+
+      {sheet === "compartir" && (
+        <CompartirSheet
+          destinatarios={[
+            { slug: "abuelos", titulo: "Abuelos" },
+            { slug: "lucia", titulo: "Tía Lucía" },
+          ]}
+          construir={construirMensaje}
+          onCerrar={() => setSheet(null)}
         />
       )}
 
