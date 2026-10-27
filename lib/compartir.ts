@@ -23,7 +23,7 @@ function bloque(titulo: string, d: DiaMensaje): string {
   } else {
     for (const t of d.tareas) {
       lineas.push(`${t.tipo === "carrito" && t.carrito ? CARRO[t.carrito] : ICONO[t.tipo]} *${t.hora}* ${t.titulo}`);
-      if (t.detalle) lineas.push(`      _${t.detalle}_`);
+      if (t.detalle && t.eventoId) lineas.push(`      _${t.detalle}_`);
       if (t.modificada) {
         const cambios = [t.horaRutina ? `ahora a las ${t.hora} (antes ${t.horaRutina})` : "", t.nota ?? ""].filter(Boolean);
         lineas.push(`      ⚠️ Cambio de planes${cambios.length ? `: ${cambios.join(" · ")}` : ""}`);
