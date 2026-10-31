@@ -124,7 +124,7 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (5, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30.', 'llevar', 'jimena', '{alvaro}', null, null),
   (5, '08:45', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{gloria}', null, null),
   (5, '13:55', 'Recoger a Jimena', 'Con el Carro Beige. Comen todos en casa.', 'recogida', 'jimena', '{alvaro}', 'beige', null),
-  (5, '14:00', 'Recoger a Mateo (salida a las 14:00)', 'Con el Carro Verde. Comen todos en casa.', 'recogida', 'mateo', '{alvaro}', 'verde', null);
+  (5, '14:00', 'Recoger a Mateo', 'Con el Carro Verde. Comen todos en casa.', 'recogida', 'mateo', '{gloria}', 'verde', null);
 
 update public.tareas_rutina set adelantable = true where dia_semana = 4 and carrito = 'verde' and destino = 'Casa Abuelos';
 
