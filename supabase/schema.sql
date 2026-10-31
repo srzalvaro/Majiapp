@@ -111,9 +111,9 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (3, '15:30', 'Gloria coge el Carro Verde en Viveros', 'Para recoger a Mateo.', 'carrito', null, '{gloria,goyo,abuela}', 'verde', null),
   (3, '16:00', 'Recoger a Mateo en la guardería', 'Con el Carro Verde (el de Viveros).', 'recogida', 'mateo', '{gloria}', 'verde', null),
 
-  (3, '16:30', 'Tía Lucía recoge a Jimena en Viveros', 'Después de la siesta. Pasa la tarde con ella.', 'otro', 'jimena', '{lucia,goyo,abuela}', null, null),
-  (3, '19:00', 'Dejar el Carro Beige en Fundición (Casa Familia)', 'A final del día. Gloria lo trae con Jimena.', 'carrito', null, '{gloria}', 'beige', 'Casa Familia'),
-  (3, '19:00', 'Dejar el Carro Verde en Fundición (Casa Familia)', 'A final del día. Gloria lo trae con Mateo.', 'carrito', null, '{gloria}', 'verde', 'Casa Familia'),
+  (3, '16:30', 'Tía Lucía recoge a Jimena en Viveros', 'Después de la siesta. Pasa la tarde con Gloria y los peques.', 'otro', 'jimena', '{lucia,gloria,goyo,abuela}', null, null),
+  (3, '19:00', 'Dejar el Carro Beige en Fundición (Casa Familia)', 'A final del día. Gloria y Lucía traen a los peques.', 'carrito', null, '{gloria,lucia}', 'beige', 'Casa Familia'),
+  (3, '19:00', 'Dejar el Carro Verde en Fundición (Casa Familia)', 'A final del día. Gloria y Lucía traen a los peques.', 'carrito', null, '{gloria,lucia}', 'verde', 'Casa Familia'),
   -- JUEVES
   (4, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30. Con el Carro Beige; después lo dejas en Fundición.', 'llevar', 'jimena', '{gloria}', null, null),
   (4, '08:45', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{alvaro}', null, null),
