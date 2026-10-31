@@ -2,7 +2,7 @@ export type Persona = "alvaro" | "gloria" | "goyo" | "abuela" | "lucia";
 export type Nino = "jimena" | "mateo";
 export type TipoTarea = "recogida" | "llevar" | "horario" | "carrito" | "otro";
 
-export const UBICACIONES = ["Casa Familia", "Casa Abuelos", "Casa Tía Lucía"] as const;
+export const UBICACIONES = ["Casa Familia", "Casa Abuelos"] as const;
 export type Ubicacion = (typeof UBICACIONES)[number];
 
 export interface Carrito {

@@ -13,6 +13,9 @@ create table if not exists public.carritos (
   updated_at timestamptz not null default now()
 );
 
+-- Casa Tía Lucía ya no se usa: cualquier carro que estuviera allí vuelve a casa
+update public.carritos set ubicacion_actual = 'Casa Familia' where ubicacion_actual = 'Casa Tía Lucía';
+
 insert into public.carritos (id, nombre, color_hex, asignacion_preferente, ubicacion_actual) values
   ('beige', 'Carro Beige', '#d2b48c', 'Jimena', 'Casa Familia'),
   ('verde', 'Carro Verde', '#4caf50', 'Mateo',  'Casa Familia')
@@ -108,6 +111,7 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (3, '15:30', 'Gloria coge el Carro Verde en Viveros', 'Para recoger a Mateo.', 'carrito', null, '{gloria,goyo,abuela}', 'verde', null),
   (3, '16:00', 'Recoger a Mateo en la guardería', 'Con el Carro Verde (el de Viveros).', 'recogida', 'mateo', '{gloria}', 'verde', null),
 
+  (3, '16:30', 'Tía Lucía recoge a Jimena en Viveros', 'Después de la siesta. Pasa la tarde con ella.', 'otro', 'jimena', '{lucia,goyo,abuela}', null, null),
   (3, '19:00', 'Dejar el Carro Beige en Fundición (Casa Familia)', 'A final del día. Gloria lo trae con Jimena.', 'carrito', null, '{gloria}', 'beige', 'Casa Familia'),
   (3, '19:00', 'Dejar el Carro Verde en Fundición (Casa Familia)', 'A final del día. Gloria lo trae con Mateo.', 'carrito', null, '{gloria}', 'verde', 'Casa Familia'),
   -- JUEVES
