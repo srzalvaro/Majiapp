@@ -82,14 +82,13 @@ truncate public.tareas_rutina restart identity;
 -- Las tareas con "destino" alimentan las alertas de carros (si a su hora el carro no está ahí).
 -- Las que llevan carrito pero no destino son solo informativas.
 insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino, responsables, carrito, destino) values
-  -- LUNES · la abuela recoge a Jimena a las 14:00 y la lleva a comer a Viveros; Gloria recoge a Mateo sin carro; Álvaro recoge a los dos con el carro doble en Viveros
+  -- LUNES · la abuela recoge a Jimena a las 14:00 y la lleva a comer a Viveros; Gloria recoge a Mateo sin carro y lleva a los dos a Fundición
   (1, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30. Con el Carro Beige.', 'llevar', 'jimena', '{abuela}', null, null),
   (1, '08:45', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{alvaro}', null, null),
   (1, '09:00', 'Dejar el Carro Beige en Viveros (al volver del cole)', 'Es el que llevas con Jimena. Lo usas a las 14:00 para recogerla.', 'carrito', null, '{abuela}', 'beige', 'Casa Abuelos'),
   (1, '14:00', 'Recoger a Jimena en el cole (salida a las 14:00)', 'Con el Carro Beige. La lleváis a comer a vuestra casa.', 'recogida', 'jimena', '{abuela}', 'beige', null),
   (1, '15:00', 'Gloria va a comer a vuestra casa', 'Sale del cole a las 15:00 y come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null, null),
-  (1, '16:00', 'Recoger a Mateo en la guardería', 'Gloria va sin carro y lo lleva a Viveros. El Carro Verde se queda en Fundición todo el día.', 'recogida', 'mateo', '{gloria}', null, null),
-  (1, '19:00', 'Álvaro recoge a Jimena y a Mateo en Viveros', 'Con el carro doble. El Carro Beige se queda en Viveros a dormir para el martes.', 'otro', null, '{alvaro,goyo,abuela}', null, null),
+  (1, '16:00', 'Recoger a Mateo en la guardería', 'Gloria va sin carro. Se lleva a Mateo y a Jimena (que está en Viveros) a Fundición. El Carro Beige se queda en Viveros y el Verde en Fundición.', 'recogida', 'mateo', '{gloria}', null, null),
   -- MARTES · Gloria deja el Verde en Viveros al llevar a Mateo; los abuelos buscan el Beige por la tarde
   (2, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30. Va en patinete, sin carro.', 'llevar', 'jimena', '{alvaro}', null, null),
   (2, '08:30', 'Llevar a Mateo a la guardería', null, 'llevar', 'mateo', '{gloria}', null, null),
