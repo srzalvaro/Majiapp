@@ -117,15 +117,14 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (4, '13:55', 'Recoger a Jimena', 'Con el Carro Beige. Se queda con ella hasta la clase de inglés.', 'recogida', 'jimena', '{alvaro}', 'beige', null),
   (4, '16:00', 'Recoger a Mateo en la guardería', 'Con el Carro Verde (el de Viveros). Luego, a la entrada de inglés.', 'recogida', 'mateo', '{goyo}', 'verde', null),
   (4, '17:00', 'Llevar a Mateo a la entrada de inglés', 'Allí lo coge Álvaro (que ya tiene a Jimena) y se queda con ellos durante la clase.', 'otro', null, '{goyo,alvaro}', null, null),
-  (4, '19:00', 'Llevar el Carro Beige a Fundición (Casa Familia)', 'A final del día, desde la entrada de inglés.', 'carrito', null, '{alvaro}', 'beige', 'Casa Familia'),
-  (4, '19:00', 'Llevar el Carro Verde a Fundición (Casa Familia)', 'A final del día, desde la entrada de inglés.', 'carrito', null, '{alvaro}', 'verde', 'Casa Familia'),
+  (4, '19:00', 'Llevar el Carro Beige y el Carro Verde a Fundición (Casa Familia)', 'A final del día, desde la entrada de inglés.', 'carrito', null, '{alvaro}', 'beige', 'Casa Familia'),
   -- VIERNES
   (5, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30.', 'llevar', 'jimena', '{alvaro}', null, null),
   (5, '08:45', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{gloria}', null, null),
   (5, '13:55', 'Recoger a Jimena', 'Con el Carro Beige. Comen todos en casa.', 'recogida', 'jimena', '{alvaro}', 'beige', null),
   (5, '14:00', 'Recoger a Mateo', 'Con el Carro Verde. Comen todos en casa.', 'recogida', 'mateo', '{gloria}', 'verde', null);
 
-update public.tareas_rutina set carrito_extra = 'verde' where dia_semana = 3 and hora = '19:00' and carrito = 'beige';
+update public.tareas_rutina set carrito_extra = 'verde' where dia_semana in (3, 4) and hora = '19:00' and carrito = 'beige';
 update public.tareas_rutina set adelantable = true where dia_semana = 4 and carrito = 'verde' and destino = 'Casa Abuelos';
 
 -- 3. Excepciones puntuales: sustituyen a quién recoge a un niño ese día ------
