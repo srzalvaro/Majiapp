@@ -309,7 +309,6 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       saludo: r.saludo,
       hoy: dia(hoy, true),
       manana: dia(manana, false),
-      carritos: carritos.filter((c) => r.carritos.includes(c.id)),
       enlace: `${window.location.origin}/${r.slug}`,
     });
   }

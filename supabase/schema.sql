@@ -89,6 +89,7 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (1, '09:00', 'Dejar el Carro Beige en Viveros (al volver del cole)', 'Es el que llevas con Jimena. Lo usas a las 13:55 para recogerla.', 'carrito', null, '{abuela}', 'beige', 'Casa Abuelos'),
   (1, '13:55', 'Recoger a Jimena', 'Con el Carro Beige. La lleváis a comer a vuestra casa.', 'recogida', 'jimena', '{abuela}', 'beige', null),
   (1, '15:00', 'Gloria va a comer a vuestra casa', 'Sale del cole a las 15:00 y come con vosotros.', 'horario', null, '{gloria,goyo,abuela}', null, null),
+  (1, '16:30', 'Gloria se lleva a Jimena de Viveros', 'Gloria viene tras recoger a Mateo. Si Jimena duerme, se queda y la recoge Álvaro. No tenéis que hacer nada más.', 'otro', 'jimena', '{goyo,abuela}', null, null),
   (1, '16:00', 'Recoger a Mateo en la guardería', 'Gloria va sin carro. Se lleva a Mateo y a Jimena (que está en Viveros) a Fundición. El Carro Beige se queda en Viveros y el Verde en Fundición.', 'recogida', 'mateo', '{gloria}', null, null),
   -- MARTES · Gloria deja el Verde en Viveros al llevar a Mateo; los abuelos buscan el Beige por la tarde
   (2, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30. Va en patinete, sin carro.', 'llevar', 'jimena', '{alvaro}', null, null),

@@ -1,5 +1,5 @@
 import { etiquetaLarga } from "./dates";
-import { carrosDe, type Ausencia, type Carrito, type DiaEspecial, type TareaDia } from "./types";
+import { carrosDe, type Ausencia, type DiaEspecial, type TareaDia } from "./types";
 
 const ICONO = { recogida: "🎒", llevar: "🚶", horario: "🍽️", carrito: "⚪", otro: "📌" } as const;
 const CARRO = { beige: "🟤", verde: "🟢" } as const;
@@ -38,7 +38,6 @@ export function mensajeAgenda(o: {
   saludo: string;
   hoy: DiaMensaje;
   manana: DiaMensaje;
-  carritos: Carrito[];
   enlace?: string;
 }): string {
   const partes = [
@@ -46,13 +45,6 @@ export function mensajeAgenda(o: {
     bloque("📅 HOY", o.hoy),
     bloque("🌙 MAÑANA", o.manana),
   ];
-  if (o.carritos.length > 0) {
-    partes.push(
-      ["📍 *Carros ahora*", ...o.carritos.map((c) => `${CARRO[c.id]} ${c.nombre.replace("Carro ", "")} → ${c.ubicacion_actual}`)].join(
-        "\n",
-      ),
-    );
-  }
   if (o.enlace) partes.push(`🔗 ${o.enlace}`);
   return partes.join("\n\n");
 }
