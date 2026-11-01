@@ -1,6 +1,6 @@
 import { PERSONAS } from "@/lib/roles";
 import CarroIcon from "./CarroIcon";
-import type { TareaDia } from "@/lib/types";
+import { carrosDe, type TareaDia } from "@/lib/types";
 
 const ICONO = { recogida: "🎒", llevar: "🚶", horario: "🍽️", carrito: "🚼", otro: "📌" } as const;
 
@@ -32,7 +32,7 @@ export default function TareaCard({
     >
       <div className="flex gap-3">
         <div className={grande ? "text-3xl" : "text-2xl"}>
-          {t.tipo === "carrito" ? <CarroIcon carro={t.carrito} className={grande ? "h-9 w-9" : "h-7 w-7"} /> : ICONO[t.tipo]}
+          {t.tipo === "carrito" ? <span className="flex">{(carrosDe(t).length ? carrosDe(t) : [null]).map((c, i) => <CarroIcon key={i} carro={c} className={grande ? "h-9 w-9" : "h-7 w-7"} />)}</span> : ICONO[t.tipo]}
         </div>
         <div className="min-w-0 flex-1">
           <p className={`font-bold ${grande ? "text-2xl" : "text-base"} ${hecha || t.omitida ? "line-through" : ""}`}>
@@ -71,7 +71,7 @@ export default function TareaCard({
                   grande ? "h-12 px-6 text-lg" : "h-10 px-4"
                 }`}
               >
-                ✓ Hecho{t.carrito && t.destino ? ` · carro en ${t.destino.replace("Casa ", "")}` : ""}
+                ✓ Hecho{t.carrito && t.destino ? ` · ${t.carrito_extra ? "carros" : "carro"} en ${t.destino.replace("Casa ", "")}` : ""}
               </button>
             ))
           )}

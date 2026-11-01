@@ -1,5 +1,5 @@
 import { etiquetaLarga } from "./dates";
-import type { Ausencia, Carrito, DiaEspecial, TareaDia } from "./types";
+import { carrosDe, type Ausencia, type Carrito, type DiaEspecial, type TareaDia } from "./types";
 
 const ICONO = { recogida: "🎒", llevar: "🚶", horario: "🍽️", carrito: "⚪", otro: "📌" } as const;
 const CARRO = { beige: "🟤", verde: "🟢" } as const;
@@ -22,7 +22,7 @@ function bloque(titulo: string, d: DiaMensaje): string {
     lineas.push("Nada que hacer 🎉");
   } else {
     for (const t of d.tareas) {
-      lineas.push(`${t.tipo === "carrito" && t.carrito ? CARRO[t.carrito] : ICONO[t.tipo]} *${t.hora}* ${t.titulo}`);
+      lineas.push(`${t.tipo === "carrito" && t.carrito ? carrosDe(t).map((c) => CARRO[c]).join("") : ICONO[t.tipo]} *${t.hora}* ${t.titulo}`);
       if (t.detalle && t.eventoId) lineas.push(`      _${t.detalle}_`);
       if (t.modificada) {
         const cambios = [t.horaRutina ? `ahora a las ${t.hora} (antes ${t.horaRutina})` : "", t.nota ?? ""].filter(Boolean);

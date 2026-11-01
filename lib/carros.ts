@@ -1,5 +1,5 @@
 import { diaSemana, sumarDias } from "./dates";
-import type { Carrito, TareaRutina, Ubicacion } from "./types";
+import { carrosDe, type Carrito, type TareaRutina, type Ubicacion } from "./types";
 
 export interface AlertaCarro {
   carrito: Carrito;
@@ -61,7 +61,7 @@ export function alertasCarros(
   const alertas: AlertaCarro[] = [];
 
   for (const c of carritos) {
-    const tareas = rutina.filter((t) => t.carrito === c.id && t.destino);
+    const tareas = rutina.filter((t) => carrosDe(t).includes(c.id) && t.destino);
     let ultima: { min: number; hora: string; destino: Ubicacion; fecha: string; key: string } | null = null;
     let proxima: { min: number; destino: Ubicacion; adelantable: boolean } | null = null;
 

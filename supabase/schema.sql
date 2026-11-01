@@ -69,6 +69,7 @@ create table if not exists public.tareas_rutina (
   carrito text references public.carritos(id)
 );
 -- Dónde debe quedar el carro al hacer esta tarea (alertas si no está ahí)
+alter table public.tareas_rutina add column if not exists carrito_extra text references public.carritos(id);
 alter table public.tareas_rutina add column if not exists destino text
   check (destino in ('Casa Familia', 'Casa Abuelos', 'Casa Tía Lucía'));
 -- La tarea se puede hacer el día anterior (p. ej. los abuelos ya cogieron el carro): no da alerta antes
@@ -107,8 +108,7 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (3, '16:00', 'Recoger a Mateo en la guardería', 'Con el Carro Verde (el de Viveros).', 'recogida', 'mateo', '{gloria}', 'verde', null),
 
   (3, '16:30', 'Tía Lucía recoge a Jimena en Viveros', 'Después de la siesta. Pasa la tarde con Gloria y los peques.', 'otro', 'jimena', '{lucia,gloria,goyo,abuela}', null, null),
-  (3, '19:00', 'Dejar el Carro Beige en Fundición (Casa Familia)', 'A final del día. Gloria y Lucía traen a los peques.', 'carrito', null, '{gloria,lucia}', 'beige', 'Casa Familia'),
-  (3, '19:00', 'Dejar el Carro Verde en Fundición (Casa Familia)', 'A final del día. Gloria y Lucía traen a los peques.', 'carrito', null, '{gloria,lucia}', 'verde', 'Casa Familia'),
+  (3, '19:00', 'Dejar el Carro Beige y el Carro Verde en Fundición (Casa Familia)', 'A final del día. Gloria y Lucía traen a los peques.', 'carrito', null, '{gloria,lucia}', 'beige', 'Casa Familia'),
   -- JUEVES
   (4, '08:30', 'Llevar a Jimena al cole', 'Entrada 8:30. Con el Carro Beige; después lo dejas en Fundición.', 'llevar', 'jimena', '{gloria}', null, null),
   (4, '08:45', 'Llevar a Mateo a la guardería', 'Entrada flexible 8:45–9:30.', 'llevar', 'mateo', '{alvaro}', null, null),
@@ -125,6 +125,7 @@ insert into public.tareas_rutina (dia_semana, hora, titulo, detalle, tipo, nino,
   (5, '13:55', 'Recoger a Jimena', 'Con el Carro Beige. Comen todos en casa.', 'recogida', 'jimena', '{alvaro}', 'beige', null),
   (5, '14:00', 'Recoger a Mateo', 'Con el Carro Verde. Comen todos en casa.', 'recogida', 'mateo', '{gloria}', 'verde', null);
 
+update public.tareas_rutina set carrito_extra = 'verde' where dia_semana = 3 and hora = '19:00' and carrito = 'beige';
 update public.tareas_rutina set adelantable = true where dia_semana = 4 and carrito = 'verde' and destino = 'Casa Abuelos';
 
 -- 3. Excepciones puntuales: sustituyen a quién recoge a un niño ese día ------

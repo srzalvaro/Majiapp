@@ -47,7 +47,7 @@ import {
 import { rolDeSesion } from "@/lib/auth";
 import { ROLES, type RolConfig } from "@/lib/roles";
 import { getSupabase } from "@/lib/supabase";
-import type { Carrito, DiaEspecial, Evento, Ausencia, Excepcion, Hecha, Omitida, TareaDia, TareaRutina, Ubicacion } from "@/lib/types";
+import { carrosDe, type Carrito, type DiaEspecial, Evento, Ausencia, Excepcion, Hecha, Omitida, TareaDia, TareaRutina, Ubicacion } from "@/lib/types";
 
 export default function RolView({ rol }: { rol: RolConfig }) {
   const sb = getSupabase();
@@ -230,7 +230,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       await marcarHecha(sb, fecha, t.key, rol.titulo);
       await recargarPlanes();
       // Tarea de carro de hoy: además deja el carro en su destino
-      if (fecha === hoy && t.carrito && t.destino) await onMover(t.carrito, t.destino);
+      if (fecha === hoy && t.destino) for (const c of carrosDe(t)) await onMover(c, t.destino);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -268,7 +268,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       // Traslados de los carros elegidos: no hacen falta esos días
       const filas = a.fechas.flatMap((f) =>
         rutina
-          .filter((t) => t.dia_semana === diaSemana(f) && t.tipo === "carrito" && t.carrito && a.carros.includes(t.carrito))
+          .filter((t) => t.dia_semana === diaSemana(f) && t.tipo === "carrito" && carrosDe(t).some((c) => a.carros.includes(c)))
           .map((t) => ({ fecha: f, tarea_key: `r:${t.id}` })),
       );
       await omitirTareas(sb, filas);
@@ -334,7 +334,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       // Si hoy hay tareas de ese carro cuyo destino es esta ubicación, quedan hechas
       const ya = new Set(hechas.filter((h) => h.fecha === hoy).map((h) => h.tarea_key));
       const pendientes = resolverDia(hoy, rutina, [], especiales, eventos, omitidas, ausencias).filter(
-        (t) => !t.omitida && t.carrito === id && t.destino === ubicacion && !ya.has(t.key),
+        (t) => !t.omitida && carrosDe(t).includes(id as "beige" | "verde") && t.destino === ubicacion && !ya.has(t.key),
       );
       if (pendientes.length) {
         await Promise.all(pendientes.map((t) => marcarHecha(sb, hoy, t.key, rol.titulo)));

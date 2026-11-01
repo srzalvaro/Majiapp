@@ -24,6 +24,8 @@ export interface TareaRutina {
   nino: Nino | null;
   responsables: Persona[];
   carrito: "beige" | "verde" | null;
+  /** Segundo carro de la misma tarea (p. ej. "dejar los dos carros en Fundición"). */
+  carrito_extra?: "beige" | "verde" | null;
   destino: Ubicacion | null;
   /** Se puede hacer el día anterior: no genera alerta si el carro ya está en su destino. */
   adelantable?: boolean;
@@ -87,4 +89,9 @@ export interface TareaDia extends TareaRutina {
   nota: string | null;
   /** Si viene de la tabla `eventos` (plan suelto), su id. */
   eventoId?: number;
+}
+
+/** Carros que afecta una tarea (uno o dos). */
+export function carrosDe(t: { carrito: "beige" | "verde" | null; carrito_extra?: "beige" | "verde" | null }): ("beige" | "verde")[] {
+  return [t.carrito, t.carrito_extra].filter((c): c is "beige" | "verde" => !!c);
 }
