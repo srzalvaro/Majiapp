@@ -4,6 +4,17 @@ import { carrosDe, type TareaDia } from "@/lib/types";
 
 const ICONO = { recogida: "🎒", llevar: "🚶", horario: "🍽️", carrito: "🚼", otro: "📌" } as const;
 
+export function IconoTarea({ t, className }: { t: TareaDia; className: string }) {
+  if (t.tipo !== "carrito") return <>{ICONO[t.tipo]}</>;
+  return (
+    <span className="flex">
+      {(carrosDe(t).length ? carrosDe(t) : [null]).map((c, i) => (
+        <CarroIcon key={i} carro={c} className={className} />
+      ))}
+    </span>
+  );
+}
+
 export default function TareaCard({
   t,
   grande,
