@@ -5,7 +5,7 @@ import Sheet from "./Sheet";
 import { rangoFechas } from "./FestivoSheet";
 import type { Ausencia, Nino } from "@/lib/types";
 
-const CAMPO = "h-12 w-full rounded-xl bg-stone-100 px-4";
+const CAMPO = "h-12 w-full rounded-xl bg-[#efdcc8] px-4";
 const NINOS: { id: Nino; nombre: string }[] = [
   { id: "mateo", nombre: "Mateo" },
   { id: "jimena", nombre: "Jimena" },
@@ -60,7 +60,7 @@ export default function AusenciaSheet({
               key={n.id}
               onClick={() => setNino(n.id)}
               aria-pressed={nino === n.id}
-              className={`h-11 flex-1 rounded-xl font-semibold ${nino === n.id ? "bg-stone-900 text-white" : "bg-stone-100"}`}
+              className={`h-11 flex-1 rounded-xl font-semibold ${nino === n.id ? "bg-ciruela text-white" : "bg-[#efdcc8]"}`}
             >
               {n.nombre}
             </button>
@@ -90,7 +90,7 @@ export default function AusenciaSheet({
               onClick={() => setCarros((s) => (s.includes(c.id) ? s.filter((x) => x !== c.id) : [...s, c.id]))}
               aria-pressed={carros.includes(c.id)}
               className={`h-11 rounded-full px-4 text-sm font-medium ${
-                carros.includes(c.id) ? "bg-amber-400 text-stone-900" : "bg-stone-100 text-stone-700"
+                carros.includes(c.id) ? "bg-amber-400 text-stone-900" : "bg-[#efdcc8] text-stone-700"
               }`}
             >
               {c.nombre}
@@ -103,7 +103,7 @@ export default function AusenciaSheet({
         <button
           onClick={guardar}
           disabled={!valido || guardando}
-          className="h-12 rounded-xl bg-stone-900 font-semibold text-white disabled:opacity-40"
+          className="h-12 rounded-xl bg-ciruela font-semibold text-white disabled:opacity-40"
         >
           {guardando ? "Guardando…" : "Guardar ausencia"}
         </button>
@@ -115,7 +115,7 @@ export default function AusenciaSheet({
               <button
                 key={a.nino}
                 onClick={() => onQuitar(a.nino)}
-                className="h-12 rounded-xl bg-stone-100 px-4 text-left font-medium"
+                className="h-12 rounded-xl bg-[#efdcc8] px-4 text-left font-medium"
               >
                 Quitar ausencia de {a.nino === "mateo" ? "Mateo" : "Jimena"}
                 {a.nota ? ` (${a.nota})` : ""}

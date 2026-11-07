@@ -5,7 +5,7 @@ import Sheet from "./Sheet";
 import { sumarDias } from "@/lib/dates";
 import type { DiaEspecial } from "@/lib/types";
 
-const CAMPO = "h-12 w-full rounded-xl bg-stone-100 px-4";
+const CAMPO = "h-12 w-full rounded-xl bg-[#efdcc8] px-4";
 const MAX_DIAS = 31;
 
 /** Fechas "YYYY-MM-DD" desde..hasta, ambas incluidas. */
@@ -75,12 +75,12 @@ export default function FestivoSheet({
         <button
           onClick={guardar}
           disabled={!valido || guardando}
-          className="h-12 rounded-xl bg-stone-900 font-semibold text-white disabled:opacity-40"
+          className="h-12 rounded-xl bg-ciruela font-semibold text-white disabled:opacity-40"
         >
           {guardando ? "Guardando…" : "Marcar como festivo"}
         </button>
         {existente && (
-          <button onClick={onQuitar} className="h-12 rounded-xl bg-stone-100 font-medium">
+          <button onClick={onQuitar} className="h-12 rounded-xl bg-[#efdcc8] font-medium">
             Quitar festivo del día seleccionado
           </button>
         )}

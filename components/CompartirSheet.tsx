@@ -41,7 +41,7 @@ export default function CompartirSheet({
                 key={d.slug}
                 onClick={() => elegir(d.slug)}
                 aria-pressed={slug === d.slug}
-                className={`h-11 flex-1 rounded-xl font-semibold ${slug === d.slug ? "bg-stone-900 text-white" : "bg-stone-100"}`}
+                className={`h-11 flex-1 rounded-xl font-semibold ${slug === d.slug ? "bg-ciruela text-white" : "bg-[#efdcc8]"}`}
               >
                 {d.titulo}
               </button>
@@ -53,7 +53,7 @@ export default function CompartirSheet({
           onChange={(e) => setTexto(e.target.value)}
           rows={14}
           aria-label="Mensaje"
-          className="w-full rounded-xl bg-stone-100 p-3 text-sm leading-relaxed"
+          className="w-full rounded-xl bg-[#efdcc8] p-3 text-sm leading-relaxed"
         />
         <a
           href={`https://wa.me/?text=${encodeURIComponent(texto)}`}
@@ -63,7 +63,7 @@ export default function CompartirSheet({
         >
           Enviar por WhatsApp
         </a>
-        <button onClick={copiar} className="h-12 rounded-xl bg-stone-100 font-medium">
+        <button onClick={copiar} className="h-12 rounded-xl bg-[#efdcc8] font-medium">
           {copiado ? "Copiado ✓" : "Copiar texto"}
         </button>
       </div>

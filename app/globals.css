@@ -3,4 +3,4 @@
 @tailwind utilities;
 
 html { -webkit-tap-highlight-color: transparent; }
-body { @apply bg-stone-50 text-stone-900 antialiased; }
+body { @apply bg-crema font-cuerpo text-stone-900 antialiased; }

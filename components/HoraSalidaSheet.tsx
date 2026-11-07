@@ -6,7 +6,7 @@ import { rangoFechas } from "./FestivoSheet";
 import { diaSemana } from "@/lib/dates";
 import type { Excepcion, Nino, TareaRutina } from "@/lib/types";
 
-const CAMPO = "h-12 w-full rounded-xl bg-stone-100 px-4";
+const CAMPO = "h-12 w-full rounded-xl bg-[#efdcc8] px-4";
 const NINOS: { id: Nino; nombre: string }[] = [
   { id: "jimena", nombre: "Jimena" },
   { id: "mateo", nombre: "Mateo" },
@@ -69,7 +69,7 @@ export default function HoraSalidaSheet({
               onClick={() => setNinos((s) => (s.includes(n.id) ? s.filter((x) => x !== n.id) : [...s, n.id]))}
               aria-pressed={ninos.includes(n.id)}
               className={`h-11 flex-1 rounded-xl font-semibold ${
-                ninos.includes(n.id) ? "bg-stone-900 text-white" : "bg-stone-100"
+                ninos.includes(n.id) ? "bg-ciruela text-white" : "bg-[#efdcc8]"
               }`}
             >
               {n.nombre}
@@ -102,7 +102,7 @@ export default function HoraSalidaSheet({
         <button
           onClick={guardar}
           disabled={!valido || guardando}
-          className="h-12 rounded-xl bg-stone-900 font-semibold text-white disabled:opacity-40"
+          className="h-12 rounded-xl bg-ciruela font-semibold text-white disabled:opacity-40"
         >
           {guardando ? "Guardando…" : "Guardar cambio de hora"}
         </button>
@@ -114,7 +114,7 @@ export default function HoraSalidaSheet({
               <button
                 key={c.nino}
                 onClick={() => onQuitar(c.nino)}
-                className="h-12 rounded-xl bg-stone-100 px-4 text-left font-medium"
+                className="h-12 rounded-xl bg-[#efdcc8] px-4 text-left font-medium"
               >
                 Quitar la hora de {c.nino === "mateo" ? "Mateo" : "Jimena"} ({c.hora})
               </button>

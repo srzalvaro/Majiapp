@@ -38,7 +38,7 @@ export default function TareaCard({
   return (
     <li
       className={`rounded-2xl bg-white shadow-sm ring-1 ${hecha || t.omitida ? "opacity-60" : ""} ${
-        t.modificada ? "ring-2 ring-amber-400" : "ring-stone-200"
+        t.modificada ? "ring-2 ring-amber-400" : "ring-orange-100"
       } ${grande ? "p-5" : "p-3"}`}
     >
       <div className="flex gap-3">
@@ -47,12 +47,15 @@ export default function TareaCard({
         </div>
         <div className="min-w-0 flex-1">
           <p className={`font-bold ${grande ? "text-2xl" : "text-base"} ${hecha || t.omitida ? "line-through" : ""}`}>
-            {t.hora} <span className="font-semibold">· {t.titulo}</span>
+            <span className="mr-2 inline-block rounded-lg bg-mostaza px-2 py-0.5 font-titulo font-extrabold text-mostaza-oscuro">
+              {t.hora}
+            </span>
+            {t.titulo}
           </p>
           {t.detalle && (
             <p className={`mt-1 text-stone-600 ${grande ? "text-lg" : "text-sm"}`}>{t.detalle}</p>
           )}
-          <p className={`mt-1 text-stone-500 ${grande ? "text-base" : "text-sm"}`}>
+          <p className={`mt-1 font-semibold text-ciruela-claro ${grande ? "text-base" : "text-sm"}`}>
             {t.responsables.map((p) => PERSONAS[p]).join(" + ")}
           </p>
           {t.omitida ? (
@@ -78,7 +81,7 @@ export default function TareaCard({
             ) : (
               <button
                 onClick={onHecho}
-                className={`mt-3 rounded-xl bg-verde font-semibold text-white active:scale-95 ${
+                className={`mt-3 rounded-xl bg-mostaza font-bold text-mostaza-oscuro active:scale-95 ${
                   grande ? "h-12 px-6 text-lg" : "h-10 px-4"
                 }`}
               >

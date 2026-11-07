@@ -19,7 +19,7 @@ export default function Sheet({
         role="dialog"
         aria-label={titulo}
       >
-        <h2 className="text-xl font-bold">{titulo}</h2>
+        <h2 className="font-titulo text-xl font-extrabold text-ciruela">{titulo}</h2>
         {subtitulo && <p className="mb-4 text-sm text-stone-500">{subtitulo}</p>}
         {children}
       </div>

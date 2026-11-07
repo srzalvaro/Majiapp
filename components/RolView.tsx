@@ -374,9 +374,9 @@ export default function RolView({ rol }: { rol: RolConfig }) {
 
   return (
     <div className="pb-28">
-      <header className="sticky top-0 z-20 border-b border-stone-200 bg-stone-50/95 backdrop-blur">
+      <header className="sticky top-0 z-20 rounded-b-[26px] bg-gradient-to-br from-ciruela via-ciruela-claro to-[#8a4a3e] text-[#fff3e6] shadow-md">
         <div className="flex items-center justify-between px-4 pt-3">
-          <h1 className={`font-bold ${rol.grande ? "text-2xl" : "text-xl"}`}>
+          <h1 className={`font-titulo font-extrabold ${rol.grande ? "text-2xl" : "text-xl"}`}>
             {rol.emoji} Hola, {rol.saludo}
           </h1>
           <div className="flex items-center gap-2">
@@ -388,7 +388,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
                 key={txt}
                 onClick={() => setFecha(f)}
                 className={`rounded-full px-3 py-1 text-sm ${
-                  fecha === f ? "bg-stone-900 text-white" : "text-stone-700 ring-1 ring-stone-300"
+                  fecha === f ? "bg-calabaza font-bold text-white" : "text-white ring-1 ring-white/40"
                 }`}
               >
                 {txt}
@@ -396,7 +396,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
             ))}
             <button
               onClick={() => sb.auth.signOut()}
-              className="rounded-full px-3 py-1 text-sm text-stone-500 ring-1 ring-stone-300"
+              className="rounded-full px-3 py-1 text-sm text-white/70 ring-1 ring-white/30"
             >
               Salir
             </button>
@@ -407,6 +407,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
           hoy={hoy}
           onChange={setFecha}
           onSemana={(d) => setFecha(sumarDias(fecha, d))}
+          oscuro
         />
       </header>
 
@@ -421,7 +422,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
             </button>
           </div>
         )}
-        <p className={`px-4 font-semibold capitalize text-stone-700 ${rol.grande ? "text-lg" : ""}`}>
+        <p className={`px-4 font-titulo text-lg font-bold text-ciruela-claro first-letter:uppercase`}>
           {etiquetaLarga(fecha)}
         </p>
 
@@ -486,7 +487,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
       {rol.admin && (
         <button
           onClick={() => setSheet("menu")}
-          className="fixed bottom-5 right-4 z-10 h-14 rounded-full bg-amber-400 px-5 font-semibold shadow-lg active:scale-95"
+          className="fixed bottom-5 right-4 z-10 h-14 rounded-full bg-calabaza px-5 font-extrabold text-white shadow-lg shadow-orange-400/40 active:scale-95"
         >
           ＋ Cambios
         </button>
@@ -505,7 +506,7 @@ export default function RolView({ rol }: { rol: RolConfig }) {
               <button
                 key={o.id}
                 onClick={() => setSheet(o.id as "excepcion" | "evento" | "festivo" | "ausencia" | "hora")}
-                className="h-14 rounded-xl bg-stone-100 px-4 text-left font-medium active:bg-stone-200"
+                className="h-14 rounded-xl bg-mostaza/40 px-4 text-left font-bold text-ciruela active:bg-mostaza"
               >
                 {o.txt}
               </button>

@@ -5,7 +5,7 @@ import Sheet from "./Sheet";
 import { PERSONAS } from "@/lib/roles";
 import type { Evento, Persona } from "@/lib/types";
 
-const CAMPO = "h-12 w-full rounded-xl bg-stone-100 px-4";
+const CAMPO = "h-12 w-full rounded-xl bg-[#efdcc8] px-4";
 
 export default function EventoSheet({
   fechaInicial,
@@ -61,7 +61,7 @@ export default function EventoSheet({
               onClick={() => setSel((s) => (s.includes(p) ? s.filter((x) => x !== p) : [...s, p]))}
               aria-pressed={sel.includes(p)}
               className={`h-11 rounded-full px-4 text-sm font-medium ${
-                sel.includes(p) ? "bg-amber-400 text-stone-900" : "bg-stone-100 text-stone-700"
+                sel.includes(p) ? "bg-amber-400 text-stone-900" : "bg-[#efdcc8] text-stone-700"
               }`}
             >
               {PERSONAS[p]}
@@ -71,7 +71,7 @@ export default function EventoSheet({
         <button
           onClick={guardar}
           disabled={!valido || guardando}
-          className="mt-2 h-12 rounded-xl bg-stone-900 font-semibold text-white disabled:opacity-40"
+          className="mt-2 h-12 rounded-xl bg-ciruela font-semibold text-white disabled:opacity-40"
         >
           {guardando ? "Guardando…" : "Guardar plan"}
         </button>

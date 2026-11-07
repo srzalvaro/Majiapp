@@ -91,7 +91,7 @@ export default function ExcepcionSheet({
               onClick={() => cambiar(t.id, nino)}
               aria-pressed={tipo === t.id}
               className={`h-11 flex-1 rounded-xl font-semibold ${
-                tipo === t.id ? "bg-stone-900 text-white" : "bg-stone-100"
+                tipo === t.id ? "bg-ciruela text-white" : "bg-[#efdcc8]"
               }`}
             >
               {t.txt}
@@ -105,7 +105,7 @@ export default function ExcepcionSheet({
               onClick={() => cambiar(tipo, n.id)}
               aria-pressed={nino === n.id}
               className={`h-11 flex-1 rounded-xl font-semibold ${
-                nino === n.id ? "bg-stone-900 text-white" : "bg-stone-100"
+                nino === n.id ? "bg-ciruela text-white" : "bg-[#efdcc8]"
               }`}
             >
               {n.nombre}
@@ -114,7 +114,7 @@ export default function ExcepcionSheet({
         </div>
 
         {!actual ? (
-          <p className="rounded-xl bg-stone-100 p-4 text-stone-600">
+          <p className="rounded-xl bg-[#efdcc8] p-4 text-stone-600">
             Este día no hay que {verbo} a {nino === "jimena" ? "Jimena" : "Mateo"} en la rutina.
           </p>
         ) : (
@@ -129,7 +129,7 @@ export default function ExcepcionSheet({
                   onClick={() => toggle(p)}
                   aria-pressed={sel.includes(p)}
                   className={`h-11 rounded-full px-4 text-sm font-medium ${
-                    sel.includes(p) ? "bg-amber-400 text-stone-900" : "bg-stone-100 text-stone-700"
+                    sel.includes(p) ? "bg-amber-400 text-stone-900" : "bg-[#efdcc8] text-stone-700"
                   }`}
                 >
                   {PERSONAS[p]}
@@ -140,13 +140,13 @@ export default function ExcepcionSheet({
               value={nota}
               onChange={(e) => setNota(e.target.value)}
               placeholder="Nota (opcional)"
-              className="mb-4 h-11 w-full rounded-xl bg-stone-100 px-4"
+              className="mb-4 h-11 w-full rounded-xl bg-[#efdcc8] px-4"
             />
             <div className="flex gap-2">
               {existente && (
                 <button
                   onClick={() => onRestaurar(nino, tipo)}
-                  className="h-12 rounded-xl bg-stone-100 px-4 font-medium"
+                  className="h-12 rounded-xl bg-[#efdcc8] px-4 font-medium"
                 >
                   Restaurar rutina
                 </button>
@@ -154,7 +154,7 @@ export default function ExcepcionSheet({
               <button
                 onClick={guardar}
                 disabled={sel.length === 0 || guardando}
-                className="h-12 flex-1 rounded-xl bg-stone-900 font-semibold text-white disabled:opacity-40"
+                className="h-12 flex-1 rounded-xl bg-ciruela font-semibold text-white disabled:opacity-40"
               >
                 {guardando ? "Guardando…" : "Guardar cambio"}
               </button>
