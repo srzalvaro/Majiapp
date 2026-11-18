@@ -1,18 +1,9 @@
 export type Persona = "alvaro" | "gloria" | "goyo" | "abuela" | "lucia";
 export type Nino = "jimena" | "mateo";
 export type TipoTarea = "recogida" | "llevar" | "horario" | "carrito" | "otro";
+export type CarroId = "beige" | "verde";
 
-export const UBICACIONES = ["Casa Familia", "Casa Abuelos"] as const;
-export type Ubicacion = (typeof UBICACIONES)[number];
-
-export interface Carrito {
-  id: "beige" | "verde";
-  nombre: string;
-  color_hex: string;
-  asignacion_preferente: string | null;
-  ubicacion_actual: Ubicacion;
-  updated_at: string;
-}
+export type Ubicacion = "Casa Familia" | "Casa Abuelos";
 
 export interface TareaRutina {
   id: number;
@@ -23,75 +14,70 @@ export interface TareaRutina {
   tipo: TipoTarea;
   nino: Nino | null;
   responsables: Persona[];
-  carrito: "beige" | "verde" | null;
+  carrito: CarroId | null;
   /** Segundo carro de la misma tarea (p. ej. "dejar los dos carros en Fundición"). */
-  carrito_extra?: "beige" | "verde" | null;
+  carrito_extra?: CarroId | null;
+  /** Dónde queda el carro al terminar (solo informativo). */
   destino: Ubicacion | null;
-  /** Se puede hacer el día anterior: no genera alerta si el carro ya está en su destino. */
-  adelantable?: boolean;
 }
 
+/** Cambio puntual de quién lleva/recoge a un niño, o de su hora, un día concreto. */
 export interface Excepcion {
-  id: number;
   fecha: string;
   nino: Nino;
   tipo: "recogida" | "llevar";
-  /** null = quién lo hace no cambia (solo la hora). */
-  responsables: Persona[] | null;
+  /** Sin esto, quién lo hace no cambia (solo la hora). */
+  responsables?: Persona[];
   /** Hora distinta de la de la rutina ese día (p. ej. salida a las 14:00). */
-  hora: string | null;
-  nota: string | null;
+  hora?: string;
+  nota?: string;
 }
 
+/** Festivo o día sin cole: no se aplica la rutina semanal. */
 export interface DiaEspecial {
-  id: number;
   fecha: string;
   titulo: string;
-  nota: string | null;
+  nota?: string;
 }
 
+/** Plan suelto (fin de semana con los abuelos, etc.). */
 export interface Evento {
-  id: number;
   fecha: string;
   hora: string;
   titulo: string;
-  detalle: string | null;
+  detalle?: string;
   responsables: Persona[];
 }
 
-export interface Hecha {
-  fecha: string;
-  tarea_key: string;
-}
-
+/** Un niño que no va ese día: se tachan sus tareas de llevar y recoger. */
 export interface Ausencia {
   fecha: string;
   nino: Nino;
-  nota: string | null;
+  nota?: string;
 }
 
+/** Tarea de la rutina que no aplica un día concreto (se busca por hora y/o texto del título). */
 export interface Omitida {
   fecha: string;
-  tarea_key: string;
+  hora?: string;
+  texto?: string;
 }
 
-/** Tarea ya resuelta para una fecha concreta (rutina + excepción aplicada). */
+/** Tarea ya resuelta para una fecha concreta (rutina + cambios aplicados). */
 export interface TareaDia extends TareaRutina {
   /** Hora original de la rutina, si ese día se ha cambiado. */
   horaRutina?: string;
-  /** Clave única de la tarea en un día: 'r:<id>' rutina · 'e:<id>' plan suelto. */
   key: string;
-  /** Omitida este día por los padres (no aplica). */
+  /** No aplica este día (omitida o niño ausente). */
   omitida?: boolean;
-  /** La omisión viene de una ausencia del niño (no se restaura por tarea). */
   ausente?: boolean;
   modificada: boolean;
   nota: string | null;
-  /** Si viene de la tabla `eventos` (plan suelto), su id. */
-  eventoId?: number;
+  /** Es un plan suelto (no viene de la rutina). */
+  esPlan?: boolean;
 }
 
 /** Carros que afecta una tarea (uno o dos). */
-export function carrosDe(t: { carrito: "beige" | "verde" | null; carrito_extra?: "beige" | "verde" | null }): ("beige" | "verde")[] {
-  return [t.carrito, t.carrito_extra].filter((c): c is "beige" | "verde" => !!c);
+export function carrosDe(t: { carrito: CarroId | null; carrito_extra?: CarroId | null }): CarroId[] {
+  return [t.carrito, t.carrito_extra].filter((c): c is CarroId => !!c);
 }

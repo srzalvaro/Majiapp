@@ -23,7 +23,7 @@ function bloque(titulo: string, d: DiaMensaje): string {
   } else {
     for (const t of d.tareas) {
       lineas.push(`${t.tipo === "carrito" && t.carrito ? carrosDe(t).map((c) => CARRO[c]).join("") : ICONO[t.tipo]} *${t.hora}* ${t.titulo}`);
-      if (t.detalle && t.eventoId) lineas.push(`      _${t.detalle}_`);
+      if (t.detalle && t.esPlan) lineas.push(`      _${t.detalle}_`);
       if (t.modificada) {
         const cambios = [t.horaRutina ? `ahora a las ${t.hora} (antes ${t.horaRutina})` : "", t.nota ?? ""].filter(Boolean);
         lineas.push(`      ⚠️ Cambio de planes${cambios.length ? `: ${cambios.join(" · ")}` : ""}`);
@@ -33,7 +33,7 @@ function bloque(titulo: string, d: DiaMensaje): string {
   return lineas.join("\n");
 }
 
-/** Mensaje de WhatsApp: plan de hoy y de mañana + dónde están los carros. */
+/** Mensaje de WhatsApp: plan de hoy y de mañana. */
 export function mensajeAgenda(o: {
   saludo: string;
   hoy: DiaMensaje;

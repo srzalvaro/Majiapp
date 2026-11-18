@@ -1,13 +1,29 @@
 # Calendario & Logística Familiar
-Next.js (App Router) + Tailwind + Supabase, pensado para móvil.
 
-## Puesta en marcha
-1. Crea un proyecto en Supabase, ejecuta `supabase/schema.sql`, crea 3 usuarios en Authentication y ejecuta `supabase/usuarios.sql` (asigna el rol a cada uno).
-2. `cp .env.example .env.local` y rellena URL y anon key.
-3. `npm install && npm run dev`
-4. En Vercel, define las mismas dos variables de entorno.
+Web móvil (Next.js + Tailwind) con la rutina semanal de la familia: quién lleva y recoge a Jimena y Mateo, y los carritos.
+**No tiene base de datos ni login**: todo está en el código y Vercel despliega solo al subir a `main`.
 
-## Rutas
-- `/abuelos` · `/lucia`: solo sus tareas, tarjetas grandes, pueden mover los carritos.
-- `/padres`: matriz completa + botón "¿Cambio de planes?" (excepciones por día).
-- Todo se actualiza en tiempo real (Supabase Realtime).
+## Pantallas
+
+- `/` elige vista.
+- `/abuelos` · lo siguiente que toca, grande y sencillo (la hora sale del móvil).
+- `/padres` · todas las tareas de la semana, selector de día y botón **Compartir agenda** (WhatsApp).
+
+## Dónde está cada cosa
+
+| Qué | Archivo |
+|---|---|
+| Rutina semanal fija | `lib/rutina.ts` |
+| Cambios de un día (festivos, quién recoge, hora de salida, ausencias, planes, tareas omitidas) | `lib/cambios.ts` |
+| Mensaje de WhatsApp | `lib/compartir.ts` |
+| Personas y vistas | `lib/roles.ts` |
+
+Los cambios puntuales se piden por el chat de Claude Code, que edita `lib/cambios.ts` y lo sube a `main`.
+
+## Desarrollo
+
+```bash
+npm install
+npm run dev     # http://localhost:3000
+npm run build
+```

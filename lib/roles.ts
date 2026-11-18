@@ -15,8 +15,7 @@ export interface RolConfig {
   emoji: string;
   /** Personas cuyas tareas se muestran en esta vista. */
   personas: Persona[];
-  carritos: ("beige" | "verde")[];
-  /** Los padres ven toda la matriz y pueden crear excepciones. */
+  /** Los padres ven todas las tareas y pueden compartir la agenda. */
   admin: boolean;
   /** Vista con tarjetas grandes y texto ampliado. */
   grande: boolean;
@@ -29,17 +28,6 @@ export const ROLES: Record<string, RolConfig> = {
     saludo: "Goyo y Gloria",
     emoji: "👵",
     personas: ["goyo", "abuela"],
-    carritos: ["verde", "beige"],
-    admin: false,
-    grande: true,
-  },
-  lucia: {
-    slug: "lucia",
-    titulo: "Tía Lucía",
-    saludo: "Lucía",
-    emoji: "💛",
-    personas: ["lucia"],
-    carritos: ["beige"],
     admin: false,
     grande: true,
   },
@@ -49,7 +37,6 @@ export const ROLES: Record<string, RolConfig> = {
     saludo: "Álvaro y Gloria",
     emoji: "🏠",
     personas: ["alvaro", "gloria", "goyo", "abuela", "lucia"],
-    carritos: ["beige", "verde"],
     admin: true,
     grande: false,
   },

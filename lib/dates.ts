@@ -53,3 +53,8 @@ export function ahora(): { fecha: string; hora: string } {
   }).format(new Date());
   return { fecha: hoy(), hora };
 }
+
+export function aMinutos(hora: string): number {
+  const [h, m] = hora.split(":").map(Number);
+  return h * 60 + m;
+}
